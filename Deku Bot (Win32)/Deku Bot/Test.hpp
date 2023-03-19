@@ -1,4 +1,12 @@
 #pragma once
 
-// Stress Test Game Board Functionality
-void testGameBoard();
+#include "GameBoard.hpp"
+
+// Run all tests
+void runAllTests();
+
+// Test Game Board Constructors
+void testBoardConstructor();
+
+// Test Comparison Operator
+void testComparison();

@@ -12,19 +12,55 @@ public:
 	// Default Constructor
 	GameBoard();
 
-	// [Data Members]
-private:
+	// Explicit Constructor
+	// Takes a reference to a pre-made game board
+	GameBoard(const piece(&gameState)[8][8]);
+
+	// Copy Constructor
+	GameBoard(const GameBoard& rhs);
+
+	// Checks if black is in check
+	bool isBlackInCheck() const
+	{ return blackInCheck; }
+
+	// Checks if white is in check
+	bool isWhiteInCheck() const
+	{ return whiteInCheck; }
+
+	// Returns the number of moves since a capture or pawn move
+	int numMovesSinceCapture() const
+	{ return movesSinceCapture; }
+
+	// Returns number of black pieces
+	int numBlackPieces() const
+	{ return blackPieces; }
+
+	// Returns number of white pieces
+	int numWhitePieces() const
+	{ return whitePieces; }
+
+	// ----- Data Members ----- \\
+
 	// A 2D Array of pieces representing a game board; Top left is (0, 0)
 	piece gameBoard[8][8] = { 0 };
 
+private:
 	// Flags if a player is in check
 	bool blackInCheck, whiteInCheck;
 
 	// Integer tracks how many moves have passed since a pawn move or capture.
 	int movesSinceCapture;
 
+	// Integers hold how many pieces each side has
+	int blackPieces, whitePieces;
+
 	// Map holds a series of positions as keys, and the number of times this possition has appeared as values
 	std::map<GameBoard, int> previousPositions;
+
+	// ----- Private Methods ----- \\
+
+	// Evaluates the current board and updates pieces / flags
+	void EvaluateBoard();
 
 	// KEY OF VALUES
 	// + -> White
@@ -52,11 +88,15 @@ private:
 	//							a king. 
 	//							{For simplicity, we'll assume both players will only choose to promote a pawn to a queen}
 	// 
-	// Stalemate -				If a player is in check and has no legal moves, the game ends in a stalemate. Neither player 
-	//							wins.
+	// Stalemate -				If a player is not in check and has no legal moves, the game ends in a stalemate. Neither 
+	//							player wins.
 	// 
 	// Threefold Repitition -	If a gamestate occurs three times in a game, it is declared a draw. Neither player wins.
 	// 
 	// Fifty Move Rule -		If each player has taken 50 moves (totaling 100) without capture or a pawn move, it is
 	//							declared a draw. Neither player wins.
 };
+
+
+// Comparison Opperator
+bool operator<(const GameBoard& lhs, const GameBoard& rhs);
