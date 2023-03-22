@@ -5,6 +5,7 @@
 void runAllTests()
 {
 	testBoardConstructor();
+	testBoardFitness();
 	testComparison();
 }
 
@@ -188,6 +189,165 @@ void testBoardConstructor()
 	{
 		std::cout << "Failed White Pieces Flag" << std::endl;
 		exit(-3);
+	}
+}
+
+// Test Game Board Fitness Method
+void testBoardFitness()
+{
+	// Custom Start Boards
+	piece customStart[8][8] = { 0 };
+
+	// Test Boards
+	customStart[0][0] = -8;
+	customStart[7][7] = 9;
+	customStart[6][6] = -1;
+	GameBoard checkTest(customStart); // White is in check
+
+	customStart[1][1] = 1;
+	GameBoard stalemateTest(customStart);
+
+	customStart[0][0] = 0;
+	GameBoard winTest(customStart); // White Wins
+
+	GameBoard commonTest;
+
+	// Test stalemate case
+	if (stalemateTest.RankBoard(1) != 0)
+	{
+		std::cout << "Failed Stalemate Test" << std::endl;
+		exit(-1);
+	}
+	if (stalemateTest.RankBoard(-1) != 0)
+	{
+		std::cout << "Failed Stalemate Test" << std::endl;
+		exit(-2);
+	}
+
+	// Test check case
+	if (checkTest.RankBoard(1) != -500)
+	{
+		std::cout << "Failed White Check Test" << std::endl;
+		exit(-1);
+	}
+	if (checkTest.RankBoard(-1) != 500)
+	{
+		std::cout << "Failed White Check Test" << std::endl;
+		exit(-2);
+	}
+
+	// Test win/loss case
+	if (winTest.RankBoard(1) != 1000)
+	{
+		std::cout << "Failed White Win Test" << std::endl;
+		exit(-1);
+	}
+	if (winTest.RankBoard(-1) != -1000)
+	{
+		std::cout << "Failed White Win Test" << std::endl;
+		exit(-2);
+	}
+
+	// Test starting board
+	if (commonTest.RankBoard(1) != 0)
+	{
+		std::cout << "Failed Initial Start" << std::endl;
+		exit(-1);
+	}
+	if (commonTest.RankBoard(-1) != 0)
+	{
+		std::cout << "Failed Initial Start" << std::endl;
+		exit(-2);
+	}
+
+	customStart[0][0] = -8;
+	customStart[1][1] = 0;
+	customStart[6][6] = 0;
+
+	// [Test Each Piece]
+	// Pawns
+	customStart[3][4] = 1;
+	GameBoard whitePawnPiece(customStart);
+	if (whitePawnPiece.RankBoard(1) != 4)
+	{
+		std::cout << "Failed White Pawn" << std::endl;
+		exit(-1);
+	}
+	if (whitePawnPiece.RankBoard(-1) != -4)
+	{
+		std::cout << "Failed White Pawn" << std::endl;
+		exit(-2);
+	}
+
+	customStart[3][4] = 0;
+	customStart[3][3] = -1;
+	GameBoard blackPawnPiece(customStart);
+	if (blackPawnPiece.RankBoard(1) != -4)
+	{
+		std::cout << "Failed Black Pawn" << std::endl;
+		exit(-1);
+	}
+	if (blackPawnPiece.RankBoard(-1) != 4)
+	{
+		std::cout << "Failed Black Pawn" << std::endl;
+		exit(-2);
+	}
+
+	// Rooks
+	customStart[3][3] = 3;
+	GameBoard rookPiece(customStart);
+	if (rookPiece.RankBoard(1) != 14)
+	{
+		std::cout << "Failed Rook" << std::endl;
+		exit(-1);
+	}
+	if (rookPiece.RankBoard(-1) != -14)
+	{
+		std::cout << "Failed Rook" << std::endl;
+		exit(-2);
+	}
+
+	// Knights
+	customStart[3][3] = 5;
+	GameBoard knightPiece(customStart);
+	if (knightPiece.RankBoard(1) != 8)
+	{
+		std::cout << "Failed Knight" << std::endl;
+		exit(-1);
+	}
+	if (knightPiece.RankBoard(-1) != -8)
+	{
+		std::cout << "Failed Knight" << std::endl;
+		exit(-2);
+	}
+
+	// Bishops
+	customStart[3][3] = 0;
+	customStart[4][3] = 6;
+	GameBoard bishopPiece(customStart);
+	if (bishopPiece.RankBoard(1) != 13)
+	{
+		std::cout << "Failed Bishop" << std::endl;
+		exit(-1);
+	}
+	if (bishopPiece.RankBoard(-1) != -13)
+	{
+		std::cout << "Failed Bishop" << std::endl;
+		exit(-2);
+	}
+
+	// Queens
+	customStart[4][3] = 7;
+	GameBoard queenPiece(customStart);
+	if (queenPiece.RankBoard(1) != 27)
+	{
+		std::cout << "Failed Queen" << std::endl;
+		exit(-1);
+	}
+	if (queenPiece.RankBoard(-1) != -27)
+	{
+		std::cout << "Failed Queen" << std::endl;
+		exit(-2);
 	}
 }
 

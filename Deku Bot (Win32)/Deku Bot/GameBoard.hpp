@@ -23,6 +23,11 @@ public:
 	// Copy Constructor
 	GameBoard(const GameBoard& rhs);
 
+	// Ranks the board for a given color
+	// 1 -> White | -1 -> Black
+	// Returns an integer representing it's fitness
+	int RankBoard(const int color) const;
+
 	// Checks if black is in check
 	bool isBlackInCheck() const
 	{ return blackInCheck; }
@@ -100,9 +105,6 @@ private:
 	// Promotion -				When a pawn reaches the opponent's back rank, it may be promoted to any piece besides
 	//							a king. 
 	//							{For simplicity, we'll assume both players will only choose to promote a pawn to a queen}
-	// 
-	// Stalemate -				If a player is not in check and has no legal moves, the game ends in a stalemate. Neither 
-	//							player wins.
 	// 
 	// Threefold Repitition -	If a gamestate occurs three times in a game, it is declared a draw. Neither player wins.
 	// 
