@@ -37,17 +37,17 @@ void testBoardConstructor()
 		// Fail if any piece in the first two rows aren't black
 		for (int y = 0; y < 2; y++)
 		{
-			if (defaultTest.gameBoard[x][y] > 0)
+			if (defaultTest.gameBoard[x][y] >= 0)
 			{
 				std::cout << "Failed Black Side Start" << std::endl;
 				exit(-1);
 			}
-			if (explicitTest.gameBoard[x][y] > 0)
+			if (explicitTest.gameBoard[x][y] >= 0)
 			{
 				std::cout << "Failed Black Side Start" << std::endl;
 				exit(-2);
 			}
-			if (copyTest.gameBoard[x][y] > 0)
+			if (copyTest.gameBoard[x][y] >= 0)
 			{
 				std::cout << "Failed Black Side Start" << std::endl;
 				exit(-3);
@@ -57,17 +57,17 @@ void testBoardConstructor()
 		// Fail if any piece in the last two rows aren't white
 		for (int y = 6; y < 8; y++)
 		{
-			if (defaultTest.gameBoard[x][y] < 0)
+			if (defaultTest.gameBoard[x][y] <= 0)
 			{
 				std::cout << "Failed White Side Start" << std::endl;
 				exit(-1);
 			}
-			if (explicitTest.gameBoard[x][y] < 0)
+			if (explicitTest.gameBoard[x][y] <= 0)
 			{
 				std::cout << "Failed White Side Start" << std::endl;
 				exit(-2);
 			}
-			if (copyTest.gameBoard[x][y] < 0)
+			if (copyTest.gameBoard[x][y] <= 0)
 			{
 				std::cout << "Failed White Side Start" << std::endl;
 				exit(-3);
@@ -200,7 +200,7 @@ void testComparison()
 		{-5, -1, 0, 0, 0, 0, 1, 5 },
 		{-6, -1, 0, 0, 0, 0, 1, 6 },
 		{-7, -1, 0, 0, 0, 0, 1, 7 },
-		{-9, -1, 0, 0, 0, 0, 1, 0 },
+		{-9, -1, 0, 0, 0, 0, 0, 9 },
 		{-6, -1, 0, 0, 0, 0, 1, 6 },
 		{-5, -1, 0, 0, 0, 0, 1, 5 },
 		{-4, -1, 0, 0, 0, 0, 1, 4 },
@@ -215,5 +215,17 @@ void testComparison()
 	{
 		std::cout << "Failed Self Comparison Test" << std::endl;
 		exit(-1);
+	}
+
+	// Check if first comparison step is correct
+	if (defaultBoard < lesserBoard)
+	{
+		std::cout << "Failed First Comparison Step" << std::endl;
+		exit(-1);
+	}
+	if (!(lesserBoard < defaultBoard))
+	{
+		std::cout << "Failed First Comparison Step" << std::endl;
+		exit(-2);
 	}
 }

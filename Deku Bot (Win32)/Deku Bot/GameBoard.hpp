@@ -1,9 +1,13 @@
 #pragma once
 
 #include <map>
+#include <vector>
 
 // Define a piece as an 8 bit integer
 typedef __int8 piece;
+
+// Define a coordinate as a pair of positive integers
+typedef std::pair<unsigned int, unsigned int> coordinates;
 
 // Holds information about the current game state
 class GameBoard
@@ -61,6 +65,15 @@ private:
 
 	// Evaluates the current board and updates pieces / flags
 	void EvaluateBoard();
+
+	// Finds all possible moves for a given color (1 for white, -1 for black)
+	// Returns a vector of pairs of coordinates (pair<int, int>)
+	// pair.first -> initial position | pair.second -> final position
+	std::vector<std::pair<coordinates, coordinates>> FindMoves(int color) const;
+
+	// Checks if a given pair of coordinates are within the bounds of the game board
+	bool InBounds(const unsigned int xCoord, const unsigned int yCoord) const
+	{ return xCoord < 8 && yCoord < 8; }
 
 	// KEY OF VALUES
 	// + -> White

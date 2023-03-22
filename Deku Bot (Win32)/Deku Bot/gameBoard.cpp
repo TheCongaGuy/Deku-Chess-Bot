@@ -52,6 +52,8 @@ GameBoard::GameBoard(const GameBoard& rhs)
 	movesSinceCapture = rhs.movesSinceCapture;
 	blackInCheck = rhs.blackInCheck;
 	whiteInCheck = rhs.whiteInCheck;
+	blackPieces = rhs.blackPieces;
+	whitePieces = rhs.whitePieces;
 
 	// Copy the board of the other object
 	for (int x = 0; x < 8; x++)
@@ -197,6 +199,19 @@ void GameBoard::EvaluateBoard()
 		}
 
 	// [TODO: CALCULATE TOTAL MOVES METHOD]
+	auto results = FindMoves(-1);
+	if (results.size() == 0 && !blackInCheck)
+	{
+		blackInCheck = whiteInCheck = true;
+		return;
+	}
+
+	results = FindMoves(1);
+	if (results.size() == 0 && !whiteInCheck)
+	{
+		blackInCheck = whiteInCheck = true;
+		return;
+	}
 
 	// Check for king existance
 	if (blackKingX == -1 || whiteKingX == -1)
@@ -208,9 +223,9 @@ void GameBoard::EvaluateBoard()
 	if (gameBoard[blackKingX - 1][blackKingY + 1] == 1 || gameBoard[blackKingX - 1][blackKingY + 1] == 2)
 		blackInCheck = true;
 
-	if (gameBoard[whiteKingX + 1][whiteKingY - 1] == 1 || gameBoard[whiteKingX + 1][whiteKingY - 1] == 2)
+	if (gameBoard[whiteKingX + 1][whiteKingY - 1] == -1 || gameBoard[whiteKingX + 1][whiteKingY - 1] == -2)
 		whiteInCheck = true;
-	if (gameBoard[whiteKingX - 1][whiteKingY - 1] == 1 || gameBoard[whiteKingX - 1][whiteKingY - 1] == 2)
+	if (gameBoard[whiteKingX - 1][whiteKingY - 1] == -1 || gameBoard[whiteKingX - 1][whiteKingY - 1] == -2)
 		whiteInCheck = true;
 
 	// Check for knight checks
@@ -220,12 +235,18 @@ void GameBoard::EvaluateBoard()
 			int distance = abs(areaX) + abs(areaY);
 			if (distance == 3)
 			{
-				if (gameBoard[blackKingX + areaX][blackKingY + areaY] == 5)
+				int newX = blackKingX + areaX;
+				int newY = blackKingY + areaY;
+
+				if (InBounds(newX, newY) && gameBoard[newX][newY] == 5)
 				{
 					blackInCheck = true;
 					return;
 				}
-				if (gameBoard[whiteKingX + areaX][whiteKingY + areaY] == -5)
+
+				newX = whiteKingX + areaX;
+				newY = whiteKingY + areaY;
+				if (InBounds(newX, newY) && gameBoard[newX][newY] == -5)
 				{
 					whiteInCheck = true;
 					return;
@@ -240,7 +261,7 @@ void GameBoard::EvaluateBoard()
 	{
 		int newX = blackKingX + directionX[i];
 		int newY = blackKingX + directionY[i];
-		while (newX >= 0 && newX < 8 && newY >= 0 && newY < 8)
+		while (InBounds(newX, newY))
 		{
 			// Friendly piece blocks path
 			if (gameBoard[newX][newY] < 0)
@@ -261,7 +282,7 @@ void GameBoard::EvaluateBoard()
 		int directionY[4] = { 1, -1, 1, -1 };
 		int newX = whiteKingX + directionX[i];
 		int newY = whiteKingX + directionY[i];
-		while (newX >= 0 && newX < 8 && newY >= 0 && newY < 8)
+		while (InBounds(newX, newY))
 		{
 			// Friendly piece blocks path
 			if (gameBoard[newX][newY] > 0)
@@ -283,7 +304,7 @@ void GameBoard::EvaluateBoard()
 		int directionY[4] = { 1, 0, -1, 0 };
 		int newX = blackKingX + directionX[i];
 		int newY = blackKingY + directionY[i];
-		while (newX >= 0 && newX < 8 && newY >= 0 && newY < 8)
+		while (InBounds(newX, newY))
 		{
 			// Friendly piece blocks path
 			if (gameBoard[newX][newY] < 0)
@@ -304,7 +325,7 @@ void GameBoard::EvaluateBoard()
 		int directionY[4] = { 1, 0, -1, 0 };
 		int newX = whiteKingX + directionX[i];
 		int newY = whiteKingY + directionY[i];
-		while (newX >= 0 && newX < 8 && newY >= 0 && newY < 8)
+		while (InBounds(newX, newY))
 		{
 			// Friendly piece blocks path
 			if (gameBoard[newX][newY] > 0)
@@ -320,10 +341,252 @@ void GameBoard::EvaluateBoard()
 	}
 }
 
+// Finds all possible moves for a given color (1 for white, -1 for black)
+// Returns a vector of pairs of coordinates (pair<int, int>)
+// pair.first -> initial position | pair.second -> final position
+std::vector<std::pair<coordinates, coordinates>> GameBoard::FindMoves(int color) const
+{
+	// Vector of possible moves
+	std::vector<std::pair<coordinates, coordinates>> possibleMoves;
+
+	// Check each grid space
+	for (int x = 0; x < 8; x++)
+		for (int y = 0; y < 8; y++)
+			switch (gameBoard[x][y] * color)
+			{
+				// Pawns
+				case 1:
+					// For black pawns
+					if (color == -1)
+					{
+						// Check for En Passant
+						if (y == 1 && gameBoard[x][2] == 0 && gameBoard[x][3] == 0)
+						{
+							coordinates initial(x, y);
+							coordinates final(x, 3);
+							std::pair<coordinates, coordinates> move(initial, final);
+							possibleMoves.emplace_back(move);
+						}
+					}
+
+					// For white pawns
+					if (color == 1)
+					{
+						// Check for En Passant
+						if (y == 6 && gameBoard[x][5] == 0 && gameBoard[x][4] == 0)
+						{
+							coordinates initial(x, y);
+							coordinates final(x, 4);
+							std::pair<coordinates, coordinates> move(initial, final);
+							possibleMoves.emplace_back(move);
+						}
+					}
+				case 2:
+					// For black pawns
+					if (color == -1)
+					{
+						// Check space infront
+						if (InBounds(x, y + 1) && gameBoard[x][y + 1] == 0)
+						{
+							coordinates initial(x, y);
+							coordinates final(x, y + 1);
+							std::pair<coordinates, coordinates> move(initial, final);
+							possibleMoves.emplace_back(move);
+						}
+
+						// Check diagonals
+						if (InBounds(x + 1, y + 1) && (gameBoard[x + 1][y + 1] > 0 || gameBoard[x + 1][y] == 2))
+						{
+							coordinates initial(x, y);
+							coordinates final(x + 1, y + 1);
+							std::pair<coordinates, coordinates> move(initial, final);
+							possibleMoves.emplace_back(move);
+						}
+
+						if (InBounds(x - 1, y + 1) && (gameBoard[x - 1][y + 1] > 0 || gameBoard[x - 1][y] == 2))
+						{
+							coordinates initial(x, y);
+							coordinates final(x - 1, y + 1);
+							std::pair<coordinates, coordinates> move(initial, final);
+							possibleMoves.emplace_back(move);
+						}
+					}
+
+					// For white pawns
+					if (color == 1)
+					{
+						// Check space infront
+						if (InBounds(x, y - 1) && gameBoard[x][y - 1] == 0)
+						{
+							coordinates initial(x, y);
+							coordinates final(x, y - 1);
+							std::pair<coordinates, coordinates> move(initial, final);
+							possibleMoves.emplace_back(move);
+						}
+
+						// Check diagonals
+						if (InBounds(x + 1, y - 1) && (gameBoard[x + 1][y - 1] > 0 || gameBoard[x + 1][y] == 2))
+						{
+							coordinates initial(x, y);
+							coordinates final(x + 1, y - 1);
+							std::pair<coordinates, coordinates> move(initial, final);
+							possibleMoves.emplace_back(move);
+						}
+
+						if (InBounds(x - 1, y - 1) && (gameBoard[x - 1][y - 1] > 0 || gameBoard[x - 1][y] == 2))
+						{
+							coordinates initial(x, y);
+							coordinates final(x - 1, y - 1);
+							std::pair<coordinates, coordinates> move(initial, final);
+							possibleMoves.emplace_back(move);
+						}
+					}
+					break;
+
+				// Rooks
+				case 3:
+				case 4:
+					// Check all four directions
+					for (int i = 0; i < 4; i++)
+					{
+						int directionX[4] = { 0, 1, 0, -1 };
+						int directionY[4] = { 1, 0, -1, 0 };
+						int newX = x + directionX[i];
+						int newY = y + directionY[i];
+						while (InBounds(newX, newY) && gameBoard[newX][newY] == 0)
+						{
+							coordinates initial(x, y);
+							coordinates final(newX, newY);
+							std::pair<coordinates, coordinates> move(initial, final);
+							possibleMoves.emplace_back(move);
+
+							newX += directionX[i];
+							newY += directionY[i];
+						}
+					}
+					break;
+
+				// Knights
+				case 5:
+					for (int areaX = -2; areaX <= 2; areaX++)
+						for (int areaY = -2; areaY <= 2; areaY++)
+						{
+							int distance = abs(areaX) + abs(areaY);
+							if (distance == 3)
+							{
+								int newX = x + areaX;
+								int newY = y + areaY;
+								if (InBounds(newX, newY) && gameBoard[newX][newY] == 0)
+								{
+									coordinates initial(x, y);
+									coordinates final(newX, newY);
+									std::pair<coordinates, coordinates> move(initial, final);
+									possibleMoves.emplace_back(move);
+								}
+							}
+						}
+					break;
+
+				// Bishops
+				case 6:
+					// Check all four directions
+					for (int i = 0; i < 4; i++)
+					{
+						int directionX[4] = { 1, 1, -1, -1 };
+						int directionY[4] = { 1, -1, 1, -1 };
+						int newX = x + directionX[i];
+						int newY = y + directionY[i];
+						while (InBounds(newX, newY) && gameBoard[newX][newY] == 0)
+						{
+							coordinates initial(x, y);
+							coordinates final(newX, newY);
+							std::pair<coordinates, coordinates> move(initial, final);
+							possibleMoves.emplace_back(move);
+
+							newX += directionX[i];
+							newY += directionY[i];
+						}
+					}
+					break;
+
+				// Queens
+				case 7:
+					// Check all eight directions
+					for (int i = 0; i < 8; i++)
+					{
+						int directionX[8] = { 0, 1, 0, -1, 1, 1, -1, -1 };
+						int directionY[8] = { 1, 0, -1, 0, 1, -1, 1, -1 };
+						int newX = x + directionX[i];
+						int newY = y + directionY[i];
+						while (InBounds(newX, newY) && gameBoard[newX][newY] == 0)
+						{
+							coordinates initial(x, y);
+							coordinates final(newX, newY);
+							std::pair<coordinates, coordinates> move(initial, final);
+							possibleMoves.emplace_back(move);
+
+							newX += directionX[i];
+							newY += directionY[i];
+						}
+					}
+					break;
+
+				// Kings
+				case 9:
+					// [Check for castle]
+					// Black King
+					if (color == -1 && !blackInCheck)
+					{
+
+					}
+
+					// White King
+					if (color == 1 && !whiteInCheck)
+					{
+
+					}
+				case 8:
+					// Check standard moves
+					for (int areaX = -1; areaX <= 1; areaX++)
+						for (int areaY = -1; areaY <= 1; areaY++)
+						{
+
+						}
+					break;
+			}
+}
+
 // Comparison Opperator
 bool operator<(const GameBoard& lhs, const GameBoard& rhs)
 {
 	// First check if boards reference the same board
 	if (&lhs == &rhs)
 		return false;
+
+	// If not, check number of pieces
+	if (lhs.numBlackPieces() != rhs.numBlackPieces())
+		return lhs.numBlackPieces() < rhs.numBlackPieces();
+
+	if (lhs.numWhitePieces() != rhs.numWhitePieces())
+		return lhs.numWhitePieces() < rhs.numWhitePieces();
+
+	// If piece counts are the same, check moves since capture
+	// (A board is more valuable when moves since capture is closer to 0)
+	if (lhs.numMovesSinceCapture() != rhs.numMovesSinceCapture())
+		return lhs.numMovesSinceCapture() > rhs.numMovesSinceCapture();
+
+	// If the number of moves since capture are the same, compare check flags
+	// (A board is more valuable when a king is not in check)
+	if (lhs.isBlackInCheck() != rhs.isBlackInCheck())
+		return lhs.isBlackInCheck() > rhs.isBlackInCheck();
+
+	if (lhs.isWhiteInCheck() != rhs.isWhiteInCheck())
+		return lhs.isWhiteInCheck() > rhs.isWhiteInCheck();
+
+	
+	// If the state of check is the same, calculate the fitness of the board
+	// [TODO: CALCULATE FITNESS METHOD]
+
+	// If all are equal, assume boards are equal and return false
+	return false;
 }
