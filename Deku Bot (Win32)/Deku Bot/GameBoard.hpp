@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/Graphics.hpp>
 #include <map>
 #include <vector>
 
@@ -10,7 +11,8 @@ typedef __int8 piece;
 typedef std::pair<unsigned int, unsigned int> coordinates;
 
 // Holds information about the current game state
-class GameBoard
+// Inherit from sf::Drawable to allow drawing to screen
+class GameBoard : public sf::Drawable
 {
 public:
 	// Default Constructor
@@ -22,6 +24,9 @@ public:
 
 	// Copy Constructor
 	GameBoard(const GameBoard& rhs);
+
+	// Destructor
+	~GameBoard();
 
 	// Performs a move on the board
 	// Takes two coordinates; the location of the piece to be moved and a final position
@@ -63,7 +68,7 @@ public:
 	// A 2D Array of pieces representing a game board; Top left is (0, 0)
 	piece gameBoard[8][8] = { 0 };
 
-private:
+protected:
 	// Flags if a player is in check
 	bool blackInCheck, whiteInCheck;
 
@@ -76,8 +81,11 @@ private:
 	// Integers hold how many pieces each side has
 	int blackPieces, whitePieces;
 
-	// Map holds a series of positions as keys, and the number of times this possition has appeared as values
-	std::map<GameBoard, int> previousPositions;
+	// Holds a copy of the previous board position
+	piece previousPosition[8][8];
+
+	// Stores the icons for chess pieces in memory
+	sf::Texture* pieceIcons[6];
 
 	// ----- Private Methods ----- \\
 
@@ -92,6 +100,9 @@ private:
 	// Checks if a given pair of coordinates are within the bounds of the game board
 	bool InBounds(const unsigned int xCoord, const unsigned int yCoord) const
 	{ return xCoord < 8 && yCoord < 8; }
+
+	// Method to draw items to the window
+	virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const;
 
 	// KEY OF VALUES
 	// + -> White
@@ -119,12 +130,6 @@ private:
 	//							a king. 
 	//							{For simplicity, we'll assume both players will only choose to promote a pawn to a queen}
 	// 
-	// Threefold Repitition -	If a gamestate occurs three times in a game, it is declared a draw. Neither player wins.
-	// 
 	// Fifty Move Rule -		If each player has taken 50 moves (totaling 100) without capture or a pawn move, it is
 	//							declared a draw. Neither player wins.
 };
-
-
-// Comparison Opperator
-bool operator<(const GameBoard& lhs, const GameBoard& rhs);

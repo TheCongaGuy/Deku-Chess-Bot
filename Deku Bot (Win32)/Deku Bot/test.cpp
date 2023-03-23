@@ -6,7 +6,7 @@ void runAllTests()
 {
 	testBoardConstructor();
 	testBoardFitness();
-	testComparison();
+	testMoveMethod();
 }
 
 // Test Game Board Constructors
@@ -367,54 +367,21 @@ void testBoardFitness()
 	}
 }
 
-// Test Comparison Operator
-void testComparison()
+// Test Movement Method
+void testMoveMethod()
 {
-	// Lesser board configuration
-	piece lesserBoard[8][8] = {
-		{-4, -1, 0, 0, 0, 0, 1, 4 },
-		{-5, -1, 0, 0, 0, 0, 1, 5 },
-		{-6, -1, 0, 0, 0, 0, 1, 6 },
-		{-7, -1, 0, 0, 0, 0, 1, 7 },
-		{-9, -1, 0, 0, 0, 0, 0, 9 },
-		{-6, -1, 0, 0, 0, 0, 1, 6 },
-		{-5, -1, 0, 0, 0, 0, 1, 5 },
-		{-4, -1, 0, 0, 0, 0, 1, 4 },
-	};
+	// White Box Test Board
+	BoardTest test;
 
-	// Test Boards
-	GameBoard defaultBoard;
-	GameBoard firstLesser(lesserBoard);
-	GameBoard equalBoard;
-
-	// Check if quick equal test returns false
-	if (defaultBoard < defaultBoard)
+	// Test to see if number of initial moves is accurate
+	if (test.NumberOfMoves(1) != 20)
 	{
-		std::cout << "Failed Self Comparison Test" << std::endl;
+		std::cout << "Failed Number Of Moves Check" << std::endl;
 		exit(-1);
 	}
-
-	// Check if comparison step is correct
-	if (defaultBoard < lesserBoard)
+	if (test.NumberOfMoves(-1) != 20)
 	{
-		std::cout << "Failed First Comparison Step" << std::endl;
-		exit(-1);
-	}
-	if (!(lesserBoard < defaultBoard))
-	{
-		std::cout << "Failed First Comparison Step" << std::endl;
-		exit(-2);
-	}
-
-	// Check if equal test returns false
-	if (defaultBoard < equalBoard)
-	{
-		std::cout << "Failed Equal Comparison Test" << std::endl;
-		exit(-1);
-	}
-	if (equalBoard < defaultBoard)
-	{
-		std::cout << "Failed Equal Comparison Test" << std::endl;
+		std::cout << "Failed Number Of Moves Check" << std::endl;
 		exit(-2);
 	}
 }

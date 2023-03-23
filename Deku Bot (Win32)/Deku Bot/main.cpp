@@ -1,10 +1,18 @@
 #include "Test.hpp"
 #include <SFML/Graphics.hpp> // External Window Library
+#include <iostream>
 
 int main(int argc, char* argv[])
 {
 	// Run a test before program start
 	runAllTests();
+
+	// Chess Board
+	GameBoard board;
+
+	// Coordinates of the mouse
+	coordinates onClick(-1, -1);
+	coordinates onRelease(-1, -1);
 
 	// Get the resolution of the user's monitor
 	sf::VideoMode userMonitor = sf::VideoMode::getDesktopMode();
@@ -29,13 +37,37 @@ int main(int argc, char* argv[])
 	{
 		// Event Manager
 		sf::Event event;
-
 		if (window.pollEvent(event))
+		{
+			// Close window when red x is pressed
 			if (event.type == sf::Event::Closed)
 				window.close();
 
+			// Log initial coordinates of mouse press
+			if (event.type == sf::Event::MouseButtonPressed)
+			{
+				// Tile Width
+				int tileWidth = window.getSize().x / 8;
+
+				onClick.first = sf::Mouse::getPosition(window).x / tileWidth;
+				onClick.second = sf::Mouse::getPosition(window).y / tileWidth;
+			}
+
+			// Register input on mouse release
+			if (event.type == sf::Event::MouseButtonReleased)
+			{
+				int tileWidth = window.getSize().x / 8;
+
+				onRelease.first = sf::Mouse::getPosition(window).x / tileWidth;
+				onRelease.second = sf::Mouse::getPosition(window).y / tileWidth;
+
+				board.MovePiece(onClick, onRelease);
+			}
+		}
+
 		// Window Refresh
 		window.clear();
+		window.draw(board);
 		window.display();
 	}
 

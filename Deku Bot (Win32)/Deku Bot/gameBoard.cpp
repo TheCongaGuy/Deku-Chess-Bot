@@ -21,10 +21,22 @@ GameBoard::GameBoard()
 		// Set back ranks for each color
 		gameBoard[x][0] = -backRanks[x];
 		gameBoard[x][7] = backRanks[x];
+
+		// Set the previous position to all 0 tiles
+		for (int y = 0; y < 8; y++)
+			previousPosition[x][y] = 0;
 	}
 
-	// Add the starting configuration to the moves map
-	previousPositions.emplace(std::pair<GameBoard, int>(*this, 1));
+	// Load in textures
+	for (int i = 0; i < 6; i++)
+		pieceIcons[i] = new sf::Texture;
+
+	pieceIcons[0]->loadFromFile("Image Assets/Pawn.png");
+	pieceIcons[1]->loadFromFile("Image Assets/Rook.png");
+	pieceIcons[2]->loadFromFile("Image Assets/Knight.png");
+	pieceIcons[3]->loadFromFile("Image Assets/Bishop.png");
+	pieceIcons[4]->loadFromFile("Image Assets/Queen.png");
+	pieceIcons[5]->loadFromFile("Image Assets/King.png");
 }
 
 // Explicit Constructor
@@ -34,7 +46,12 @@ GameBoard::GameBoard(const piece(&gameState)[8][8])
 	// Copy the piece positions to this objects game board
 	for (int x = 0; x < 8; x++)
 		for (int y = 0; y < 8; y++)
+		{
 			gameBoard[x][y] = gameState[x][y];
+
+			// Set the previous position to all 0 tiles
+			previousPosition[x][y] = 0;
+		}
 
 	// Evaluate the game board position
 	EvaluateBoard();
@@ -45,8 +62,16 @@ GameBoard::GameBoard(const piece(&gameState)[8][8])
 	// Assume that it is white's turn
 	whiteTurn = true;
 
-	// Add the position configuration to the moves map
-	previousPositions.emplace(std::pair<GameBoard, int>(*this, 1));
+	// Load in textures
+	for (int i = 0; i < 6; i++)
+		pieceIcons[i] = new sf::Texture;
+
+	pieceIcons[0]->loadFromFile("Image Assets/Pawn.png");
+	pieceIcons[1]->loadFromFile("Image Assets/Rook.png");
+	pieceIcons[2]->loadFromFile("Image Assets/Knight.png");
+	pieceIcons[3]->loadFromFile("Image Assets/Bishop.png");
+	pieceIcons[4]->loadFromFile("Image Assets/Queen.png");
+	pieceIcons[5]->loadFromFile("Image Assets/King.png");
 }
 
 // Copy Constructor
@@ -63,11 +88,30 @@ GameBoard::GameBoard(const GameBoard& rhs)
 	// Copy the board of the other object
 	for (int x = 0; x < 8; x++)
 		for (int y = 0; y < 8; y++)
+		{
 			gameBoard[x][y] = rhs.gameBoard[x][y];
 
-	// Copy map of previous positions
-	for (auto& position : rhs.previousPositions)
-		previousPositions.emplace(position);
+			// Copy the previous position of the rhs
+			previousPosition[x][y] = rhs.previousPosition[x][y];
+		}
+
+	// Load in textures
+	for (int i = 0; i < 6; i++)
+		pieceIcons[i] = new sf::Texture;
+
+	pieceIcons[0]->loadFromFile("Image Assets/Pawn.png");
+	pieceIcons[1]->loadFromFile("Image Assets/Rook.png");
+	pieceIcons[2]->loadFromFile("Image Assets/Knight.png");
+	pieceIcons[3]->loadFromFile("Image Assets/Bishop.png");
+	pieceIcons[4]->loadFromFile("Image Assets/Queen.png");
+	pieceIcons[5]->loadFromFile("Image Assets/King.png");
+}
+
+// Destructor
+GameBoard::~GameBoard()
+{
+	for (int i = 0; i < 6; i++)
+		delete pieceIcons[i];
 }
 
 // Performs a move on the board
@@ -102,6 +146,11 @@ bool GameBoard::MovePiece(const coordinates initial, const coordinates final)
 	// If the move exists, preform the move
 	if (validMove)
 	{
+		// Update the previous position
+		for (int x = 0; x < 8; x++)
+			for (int y = 0; y < 8; y++)
+				previousPosition[x][y] = gameBoard[x][y];
+
 		int oldX = initial.first;
 		int oldY = initial.second;
 		int newX = final.first;
@@ -115,15 +164,6 @@ bool GameBoard::MovePiece(const coordinates initial, const coordinates final)
 
 		// Swap Turns
 		whiteTurn = !whiteTurn;
-
-		// Add the board to the list of boards
-		if (previousPositions.count(*this))
-		{
-			auto board = previousPositions.find(*this);
-			board->second++;
-		}
-		else
-			previousPositions.emplace(std::pair<GameBoard, int>(*this, 1));
 	}
 
 	// Return the validity of the move
@@ -357,6 +397,9 @@ int GameBoard::RankBoard(const int color) const
 // Evaluates the current board and updates pieces / flags
 void GameBoard::EvaluateBoard()
 {
+	// Assume King is not in check at start
+	blackInCheck = whiteInCheck = false;
+
 	// Flag for pawn movement
 	bool pawnMove = false;
 	// Holds coordinates of kings
@@ -381,19 +424,19 @@ void GameBoard::EvaluateBoard()
 			if (gameBoard[x][5] == -1)
 				gameBoard[x][4] = 0;
 			else
-				gameBoard[x][5] = 1;
+				gameBoard[x][4] = 1;
 		}
 
 		// Check New En Passant Opportunities
 		if (gameBoard[x][4] == 1)
-			if (previousPositions.size() && previousPositions.end()->first.gameBoard[x][6] == 1)
+			if (previousPosition[x][6] == 1)
 			{
 				gameBoard[x][4] = 2;
 				pawnMove = true;
 			}
 
 		if (gameBoard[x][3] == -1)
-			if (previousPositions.size() && previousPositions.end()->first.gameBoard[x][1] == -1)
+			if (previousPosition[x][1] == -1)
 			{
 				gameBoard[x][3] = -2;
 				pawnMove = true;
@@ -423,14 +466,14 @@ void GameBoard::EvaluateBoard()
 				currentWhitePieces++;
 
 			// Check pawn movement
-			if (gameBoard[x][y] == 1 && previousPositions.size() && previousPositions.end()->first.gameBoard[x][y] == 0)
+			if (gameBoard[x][y] == 1 && previousPosition[x][y] == 0)
 				pawnMove = true;
 
-			if (gameBoard[x][y] == -1 && previousPositions.size() && previousPositions.end()->first.gameBoard[x][y] == 0)
+			if (gameBoard[x][y] == -1 && previousPosition[x][y] == 0)
 				pawnMove = true;
 
 			// Check Castle Rooks
-			if (x % 7 != 0 && y % 7 != 0)
+			if (x % 7 != 0 || y % 7 != 0)
 			{
 				if (gameBoard[x][y] == 4)
 					gameBoard[x][y] = 3;
@@ -446,8 +489,20 @@ void GameBoard::EvaluateBoard()
 				whiteKingX = x;
 				whiteKingY = y;
 
+				// Check if king castled
+				if (gameBoard[2][7] == 9)
+				{
+					gameBoard[0][7] = 0;
+					gameBoard[3][7] = 3;
+				}
+				if (gameBoard[6][7] == 9)
+				{
+					gameBoard[7][7] = 0;
+					gameBoard[5][7] = 3;
+				}
+
 				// Check if king moved from start
-				if (x != 4 && y != 7)
+				if (gameBoard[x][y] == 9 && (x != 4 || y != 7))
 					gameBoard[x][y] = 8;
 			}
 
@@ -457,9 +512,21 @@ void GameBoard::EvaluateBoard()
 				blackKingX = x;
 				blackKingY = y;
 
+				// Check if king castled
+				if (gameBoard[2][0] == -9)
+				{
+					gameBoard[0][0] = 0;
+					gameBoard[3][0] = -3;
+				}
+				if (gameBoard[6][0] == -9)
+				{
+					gameBoard[7][0] = 0;
+					gameBoard[5][0] = -3;
+				}
+
 				// Check if king moved from start
-				if (x != 4 && y != 0)
-					gameBoard[x][y] = 8;
+				if (gameBoard[x][y] == -9 && (x != 4 || y != 0))
+					gameBoard[x][y] = -8;
 			}
 		}
 	}
@@ -479,13 +546,6 @@ void GameBoard::EvaluateBoard()
 		blackInCheck = whiteInCheck = true;
 		return;
 	}
-
-	for (auto& position : previousPositions)
-		if (position.second >= 3)
-		{
-			blackInCheck = whiteInCheck = true;
-			return;
-		}
 
 	// Check for king existance
 	if (blackKingX == -1 || whiteKingX == -1)
@@ -702,7 +762,7 @@ std::vector<std::pair<coordinates, coordinates>> GameBoard::FindMoves(int color)
 						}
 
 						// Check diagonals
-						if (InBounds(x + 1, y - 1) && (gameBoard[x + 1][y - 1] > 0 || gameBoard[x + 1][y] == -2))
+						if (InBounds(x + 1, y - 1) && (gameBoard[x + 1][y - 1] < 0 || gameBoard[x + 1][y] == -2))
 						{
 							coordinates initial(x, y);
 							coordinates final(x + 1, y - 1);
@@ -710,7 +770,7 @@ std::vector<std::pair<coordinates, coordinates>> GameBoard::FindMoves(int color)
 							possibleMoves.emplace_back(move);
 						}
 
-						if (InBounds(x - 1, y - 1) && (gameBoard[x - 1][y - 1] > 0 || gameBoard[x - 1][y] == -2))
+						if (InBounds(x - 1, y - 1) && (gameBoard[x - 1][y - 1] < 0 || gameBoard[x - 1][y] == -2))
 						{
 							coordinates initial(x, y);
 							coordinates final(x - 1, y - 1);
@@ -730,7 +790,7 @@ std::vector<std::pair<coordinates, coordinates>> GameBoard::FindMoves(int color)
 						int directionY[4] = { 1, 0, -1, 0 };
 						int newX = x + directionX[i];
 						int newY = y + directionY[i];
-						while (InBounds(newX, newY) && gameBoard[newX][newY] * color < 0)
+						while (InBounds(newX, newY) && gameBoard[newX][newY] * color <= 0)
 						{
 							coordinates initial(x, y);
 							coordinates final(newX, newY);
@@ -756,7 +816,7 @@ std::vector<std::pair<coordinates, coordinates>> GameBoard::FindMoves(int color)
 							{
 								int newX = x + areaX;
 								int newY = y + areaY;
-								if (InBounds(newX, newY) && gameBoard[newX][newY] * color < 0)
+								if (InBounds(newX, newY) && gameBoard[newX][newY] * color <= 0)
 								{
 									coordinates initial(x, y);
 									coordinates final(newX, newY);
@@ -776,7 +836,7 @@ std::vector<std::pair<coordinates, coordinates>> GameBoard::FindMoves(int color)
 						int directionY[4] = { 1, -1, 1, -1 };
 						int newX = x + directionX[i];
 						int newY = y + directionY[i];
-						while (InBounds(newX, newY) && gameBoard[newX][newY] * color < 0)
+						while (InBounds(newX, newY) && gameBoard[newX][newY] * color <= 0)
 						{
 							coordinates initial(x, y);
 							coordinates final(newX, newY);
@@ -801,7 +861,7 @@ std::vector<std::pair<coordinates, coordinates>> GameBoard::FindMoves(int color)
 						int directionY[8] = { 1, 0, -1, 0, 1, -1, 1, -1 };
 						int newX = x + directionX[i];
 						int newY = y + directionY[i];
-						while (InBounds(newX, newY) && gameBoard[newX][newY] * color < 0)
+						while (InBounds(newX, newY) && gameBoard[newX][newY] * color <= 0)
 						{
 							coordinates initial(x, y);
 							coordinates final(newX, newY);
@@ -844,14 +904,14 @@ std::vector<std::pair<coordinates, coordinates>> GameBoard::FindMoves(int color)
 						if (color == -1 && !blackInCheck)
 						{
 							if (gameBoard[x + i][y] != 0 || gameBoard[7][y] != -4)
-								castleShort = true;
+								castleShort = false;
 						}
 
 						// White King
 						if (color == 1 && !whiteInCheck)
 						{
 							if (gameBoard[x + i][y] != 0 || gameBoard[7][y] != 4)
-								castleShort = true;
+								castleShort = false;
 						}
 					}
 
@@ -875,7 +935,7 @@ std::vector<std::pair<coordinates, coordinates>> GameBoard::FindMoves(int color)
 					// Check standard moves
 					for (int areaX = -1; areaX <= 1; areaX++)
 						for (int areaY = -1; areaY <= 1; areaY++)
-							if (InBounds(x + areaX, y + areaY) && gameBoard[x + areaX][y + areaY] * color < 0 && (areaX != 0 || areaY != 0))
+							if (InBounds(x + areaX, y + areaY) && gameBoard[x + areaX][y + areaY] * color <= 0 && (areaX != 0 || areaY != 0))
 							{
 								coordinates initial(x, y);
 								coordinates final(x + areaX, y + areaY);
@@ -890,38 +950,131 @@ std::vector<std::pair<coordinates, coordinates>> GameBoard::FindMoves(int color)
 	return possibleMoves;
 }
 
-// Comparison Opperator
-bool operator<(const GameBoard& lhs, const GameBoard& rhs)
+// Method to draw items to the window
+void GameBoard::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
-	// First check if boards reference the same board
-	if (&lhs == &rhs)
-		return false;
+	// Texture object to load to
+	sf::Texture piece;
 
-	// If not, check number of pieces
-	if (lhs.numBlackPieces() != rhs.numBlackPieces())
-		return lhs.numBlackPieces() < rhs.numBlackPieces();
+	// Calculate the width for a tile
+	int tileWidth = target.getSize().x / 8;
 
-	if (lhs.numWhitePieces() != rhs.numWhitePieces())
-		return lhs.numWhitePieces() < rhs.numWhitePieces();
-
-	// If piece counts are the same, check moves since capture
-	// (A board is more valuable when moves since capture is closer to 0)
-	if (lhs.numMovesSinceCapture() != rhs.numMovesSinceCapture())
-		return lhs.numMovesSinceCapture() > rhs.numMovesSinceCapture();
-
-	// If the number of moves since capture are the same, compare check flags
-	// (A board is more valuable when a king is not in check)
-	if (lhs.isBlackInCheck() != rhs.isBlackInCheck())
-		return lhs.isBlackInCheck() > rhs.isBlackInCheck();
-
-	if (lhs.isWhiteInCheck() != rhs.isWhiteInCheck())
-		return lhs.isWhiteInCheck() > rhs.isWhiteInCheck();
+	// Holds new position
+	int newX, newY;
 	
-	// If the state of check is the same, calculate the fitness of the board
-	int lhsFitness = lhs.RankBoard(1), rhsFitness = rhs.RankBoard(1);
-	if (lhsFitness != rhsFitness)
-		return lhsFitness < rhsFitness;
+	// Draw background
+	for (int x = 0; x < 8; x++)
+		for (int y = 0; y < 8; y++)
+		{
+			// Tile to draw with
+			sf::RectangleShape backGround;
 
-	// If all are equal, assume boards are equal and return false
-	return false;
+			// Calculate new position
+			newX = x * tileWidth;
+			newY = y * tileWidth;
+
+			// Shift tile to correct position
+			backGround.setPosition(sf::Vector2f((float)newX, (float)newY));
+
+			// Strech Tile to fill board
+			backGround.setSize(sf::Vector2f((float)tileWidth, (float)tileWidth));
+
+			// Color tile
+			if ((x + y) % 2 == 0)
+				backGround.setFillColor(sf::Color(250, 250, 250));
+			else
+				backGround.setFillColor(sf::Color(5, 5, 5));
+
+			// Draw tile
+			target.draw(backGround);
+
+			// Check if piece exists on that tile
+			if (gameBoard[x][y] != 0)
+			{
+				// Load the correct texture
+				switch (gameBoard[x][y])
+				{
+					// Black King
+					case -9:
+					case -8:
+						backGround.setTexture(pieceIcons[5]);
+						backGround.setFillColor(sf::Color(105, 105, 105));
+						break;
+
+						// Black Queen
+					case -7:
+						backGround.setTexture(pieceIcons[4]);
+						backGround.setFillColor(sf::Color(105, 105, 105));
+						break;
+
+						// Black Bishop
+					case -6:
+						backGround.setTexture(pieceIcons[3]);
+						backGround.setFillColor(sf::Color(105, 105, 105));
+						break;
+
+						// Black Knight
+					case -5:
+						backGround.setTexture(pieceIcons[2]);
+						backGround.setFillColor(sf::Color(105, 105, 105));
+						break;
+
+						// Black Rook
+					case -4:
+					case -3:
+						backGround.setTexture(pieceIcons[1]);
+						backGround.setFillColor(sf::Color(105, 105, 105));
+						break;
+
+						// Black Pawn
+					case -2:
+					case -1:
+						backGround.setTexture(pieceIcons[0]);
+						backGround.setFillColor(sf::Color(105, 105, 105));
+						break;
+
+						// White Pawn
+					case 1:
+					case 2:
+						backGround.setTexture(pieceIcons[0]);
+						backGround.setFillColor(sf::Color(255, 255, 255));
+						break;
+
+						// White Rook
+					case 3:
+					case 4:
+						backGround.setTexture(pieceIcons[1]);
+						backGround.setFillColor(sf::Color(255, 255, 255));
+						break;
+
+						// White Knight
+					case 5:
+						backGround.setTexture(pieceIcons[2]);
+						backGround.setFillColor(sf::Color(255, 255, 255));
+						break;
+
+						// White Bishop
+					case 6:
+						backGround.setTexture(pieceIcons[3]);
+						backGround.setFillColor(sf::Color(255, 255, 255));
+						break;
+
+						// White Queen
+					case 7:
+						backGround.setTexture(pieceIcons[4]);
+						backGround.setFillColor(sf::Color(255, 255, 255));
+						break;
+
+						// White King
+					case 8:
+					case 9:
+						backGround.setTexture(pieceIcons[5]);
+						backGround.setFillColor(sf::Color(255, 255, 255));
+						break;
+				}
+
+				// Draw the piece
+				target.draw(backGround);
+			}
+		}
 }
