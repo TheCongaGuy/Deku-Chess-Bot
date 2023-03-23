@@ -6,6 +6,7 @@ GameBoard::GameBoard()
 	// Set flags
 	movesSinceCapture = 0;
 	blackInCheck = whiteInCheck = false;
+	whiteTurn = true;
 	blackPieces = whitePieces = 16;
 
 	// Configuration of back ranks
@@ -41,6 +42,9 @@ GameBoard::GameBoard(const piece(&gameState)[8][8])
 	// Assume a capture was just made
 	movesSinceCapture = 0;
 
+	// Assume that it is white's turn
+	whiteTurn = true;
+
 	// Add the position configuration to the moves map
 	previousPositions.emplace(std::pair<GameBoard, int>(*this, 1));
 }
@@ -52,6 +56,7 @@ GameBoard::GameBoard(const GameBoard& rhs)
 	movesSinceCapture = rhs.movesSinceCapture;
 	blackInCheck = rhs.blackInCheck;
 	whiteInCheck = rhs.whiteInCheck;
+	whiteTurn = rhs.whiteTurn;
 	blackPieces = rhs.blackPieces;
 	whitePieces = rhs.whitePieces;
 
@@ -63,6 +68,66 @@ GameBoard::GameBoard(const GameBoard& rhs)
 	// Copy map of previous positions
 	for (auto& position : rhs.previousPositions)
 		previousPositions.emplace(position);
+}
+
+// Performs a move on the board
+// Takes two coordinates; the location of the piece to be moved and a final position
+// Returns true if move was made, false otherwise
+bool GameBoard::MovePiece(const coordinates initial, const coordinates final)
+{
+	// Flag holds move validity
+	bool validMove = false;
+
+	// Calculate all legal moves for the current color's turn
+	std::vector<std::pair<coordinates, coordinates>> legalMoves;
+
+	if (whiteTurn)
+		legalMoves = FindMoves(1);
+	else
+		legalMoves = FindMoves(-1);
+
+	// Check to see if the given move exists in the vector of legal moves
+	for (auto& move : legalMoves)
+	{
+		if (move.first != initial)
+			continue;
+
+		if (move.second != final)
+			continue;
+
+		validMove = true;
+		break;
+	}
+
+	// If the move exists, preform the move
+	if (validMove)
+	{
+		int oldX = initial.first;
+		int oldY = initial.second;
+		int newX = final.first;
+		int newY = final.second;
+
+		gameBoard[newX][newY] = gameBoard[oldX][oldY];
+		gameBoard[oldX][oldY] = 0;
+
+		// Evaluate the board
+		EvaluateBoard();
+
+		// Swap Turns
+		whiteTurn = !whiteTurn;
+
+		// Add the board to the list of boards
+		if (previousPositions.count(*this))
+		{
+			auto board = previousPositions.find(*this);
+			board->second++;
+		}
+		else
+			previousPositions.emplace(std::pair<GameBoard, int>(*this, 1));
+	}
+
+	// Return the validity of the move
+	return validMove;
 }
 
 // Ranks the board for a given color
@@ -820,6 +885,8 @@ std::vector<std::pair<coordinates, coordinates>> GameBoard::FindMoves(int color)
 					break;
 			}
 
+	// Shring to save space
+	possibleMoves.shrink_to_fit();
 	return possibleMoves;
 }
 

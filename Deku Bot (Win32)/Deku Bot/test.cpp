@@ -190,6 +190,22 @@ void testBoardConstructor()
 		std::cout << "Failed White Pieces Flag" << std::endl;
 		exit(-3);
 	}
+
+	if (!defaultTest.whosTurn())
+	{
+		std::cout << "Failed Turn Order Flag" << std::endl;
+		exit(-1);
+	}
+	if (!explicitTest.whosTurn())
+	{
+		std::cout << "Failed Turn Order Flag" << std::endl;
+		exit(-1);
+	}
+	if (!copyTest.whosTurn())
+	{
+		std::cout << "Failed Turn Order Flag" << std::endl;
+		exit(-1);
+	}
 }
 
 // Test Game Board Fitness Method
@@ -369,6 +385,7 @@ void testComparison()
 	// Test Boards
 	GameBoard defaultBoard;
 	GameBoard firstLesser(lesserBoard);
+	GameBoard equalBoard;
 
 	// Check if quick equal test returns false
 	if (defaultBoard < defaultBoard)
@@ -377,7 +394,7 @@ void testComparison()
 		exit(-1);
 	}
 
-	// Check if first comparison step is correct
+	// Check if comparison step is correct
 	if (defaultBoard < lesserBoard)
 	{
 		std::cout << "Failed First Comparison Step" << std::endl;
@@ -386,6 +403,18 @@ void testComparison()
 	if (!(lesserBoard < defaultBoard))
 	{
 		std::cout << "Failed First Comparison Step" << std::endl;
+		exit(-2);
+	}
+
+	// Check if equal test returns false
+	if (defaultBoard < equalBoard)
+	{
+		std::cout << "Failed Equal Comparison Test" << std::endl;
+		exit(-1);
+	}
+	if (equalBoard < defaultBoard)
+	{
+		std::cout << "Failed Equal Comparison Test" << std::endl;
 		exit(-2);
 	}
 }

@@ -23,6 +23,11 @@ public:
 	// Copy Constructor
 	GameBoard(const GameBoard& rhs);
 
+	// Performs a move on the board
+	// Takes two coordinates; the location of the piece to be moved and a final position
+	// Returns true if move was made, false otherwise
+	bool MovePiece(const coordinates initial, const coordinates final);
+
 	// Ranks the board for a given color
 	// 1 -> White | -1 -> Black
 	// Returns an integer representing it's fitness
@@ -35,6 +40,11 @@ public:
 	// Checks if white is in check
 	bool isWhiteInCheck() const
 	{ return whiteInCheck; }
+
+	// Returns who may move
+	// True -> White | False -> Black
+	bool whosTurn() const
+	{ return whiteTurn; }
 
 	// Returns the number of moves since a capture or pawn move
 	int numMovesSinceCapture() const
@@ -56,6 +66,9 @@ public:
 private:
 	// Flags if a player is in check
 	bool blackInCheck, whiteInCheck;
+
+	// Flag controls which player may move
+	bool whiteTurn;
 
 	// Integer tracks how many moves have passed since a pawn move or capture.
 	int movesSinceCapture;
