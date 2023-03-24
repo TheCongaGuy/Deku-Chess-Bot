@@ -29,6 +29,10 @@ private:
 
 	// ----- Methods ----- \\
 
+	// Search the tree Breadth First
+	// Returns the best move after a given amount of time
+	std::pair<coordinates, coordinates> breadthFirstSearch(std::vector<std::pair<coordinates, coordinates>>& moves, clock_t startTime);
+
 	// Recursively find the best possible outcome for a move
 	// Returns an integer
 	int miniMaxMove(GameBoard& nextGame, int alpha, int beta, int currentDepth, clock_t startTime);

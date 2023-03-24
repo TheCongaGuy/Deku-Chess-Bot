@@ -241,12 +241,12 @@ void testBoardFitness()
 	}
 
 	// Test check case
-	if (checkTest.RankBoard(1) != -500)
+	if (checkTest.RankBoard(1) != -507)
 	{
 		std::cout << "Failed White Check Test" << std::endl;
 		exit(-1);
 	}
-	if (checkTest.RankBoard(-1) != 500)
+	if (checkTest.RankBoard(-1) != 507)
 	{
 		std::cout << "Failed White Check Test" << std::endl;
 		exit(-2);
@@ -312,12 +312,12 @@ void testBoardFitness()
 	// Rooks
 	customStart[3][3] = 3;
 	GameBoard rookPiece(customStart);
-	if (rookPiece.RankBoard(1) != 14)
+	if (rookPiece.RankBoard(1) != 17)
 	{
 		std::cout << "Failed Rook" << std::endl;
 		exit(-1);
 	}
-	if (rookPiece.RankBoard(-1) != -14)
+	if (rookPiece.RankBoard(-1) != -17)
 	{
 		std::cout << "Failed Rook" << std::endl;
 		exit(-2);
@@ -326,12 +326,12 @@ void testBoardFitness()
 	// Knights
 	customStart[3][3] = 5;
 	GameBoard knightPiece(customStart);
-	if (knightPiece.RankBoard(1) != 8)
+	if (knightPiece.RankBoard(1) != 13)
 	{
 		std::cout << "Failed Knight" << std::endl;
 		exit(-1);
 	}
-	if (knightPiece.RankBoard(-1) != -8)
+	if (knightPiece.RankBoard(-1) != -13)
 	{
 		std::cout << "Failed Knight" << std::endl;
 		exit(-2);
@@ -341,12 +341,12 @@ void testBoardFitness()
 	customStart[3][3] = 0;
 	customStart[4][3] = 6;
 	GameBoard bishopPiece(customStart);
-	if (bishopPiece.RankBoard(1) != 13)
+	if (bishopPiece.RankBoard(1) != 19)
 	{
 		std::cout << "Failed Bishop" << std::endl;
 		exit(-1);
 	}
-	if (bishopPiece.RankBoard(-1) != -13)
+	if (bishopPiece.RankBoard(-1) != -19)
 	{
 		std::cout << "Failed Bishop" << std::endl;
 		exit(-2);
@@ -355,12 +355,12 @@ void testBoardFitness()
 	// Queens
 	customStart[4][3] = 7;
 	GameBoard queenPiece(customStart);
-	if (queenPiece.RankBoard(1) != 27)
+	if (queenPiece.RankBoard(1) != 34)
 	{
 		std::cout << "Failed Queen" << std::endl;
 		exit(-1);
 	}
-	if (queenPiece.RankBoard(-1) != -27)
+	if (queenPiece.RankBoard(-1) != -34)
 	{
 		std::cout << "Failed Queen" << std::endl;
 		exit(-2);

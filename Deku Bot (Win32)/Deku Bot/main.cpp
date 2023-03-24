@@ -44,12 +44,14 @@ int main(int argc, char* argv[])
 	}
 
 	// Display Max Search Time
-	std::cout << "Deku Max Search Time: " << maxTime << " Minute(s)" << std::endl;
+	std::cout << "Deku Target Search Time: " << maxTime << " Minute(s)" << std::endl;
 
 	std::cout << "Setting Up. . ." << std::endl;
 
 	// Run a test before program start
 	runAllTests();
+
+	std::cout << "Pre-Tests Passed, Instantiating AI.  .  ." << std::endl;
 
 	// Chess Board
 	GameBoard board;
@@ -78,6 +80,8 @@ int main(int argc, char* argv[])
 
 	// Generate a new VideoMode for the window
 	sf::VideoMode gameWindow(smallestDimension, smallestDimension);
+
+	std::cout << "Setup Complete" << std::endl;
 
 	// Render Window
 	sf::RenderWindow window(gameWindow, "The Great Deku Bot");

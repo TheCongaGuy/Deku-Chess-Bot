@@ -143,18 +143,18 @@ int GameBoard::RankBoard(const int color) const
 
 	// First check for draws
 	if (blackInCheck && whiteInCheck)
-		return 0;
+			return 0;
 
 	// Next check for checks
 	if (color == 1 && blackInCheck)
-		return 500;
+		fitness += 500;
 	if (color == 1 && whiteInCheck)
-		return -500;
+		fitness -= 500;
 
 	if (color == -1 && whiteInCheck)
-		return 500;
+		fitness += 500;
 	if (color == -1 && blackInCheck)
-		return -500;
+		fitness -= 500;
 
 	// Check each grid space
 	for (int x = 0; x < 8; x++)
@@ -220,8 +220,16 @@ int GameBoard::RankBoard(const int color) const
 					break;
 
 				// Rooks
-				case 3:
 				case 4:
+					if (gameBoard[x][y] * color > 0)
+						fitness++;
+					else
+						fitness--;
+				case 3:
+					if (gameBoard[x][y] * color > 0)
+						fitness += 3;
+					else
+						fitness -= 3;
 					// Check all four directions
 					for (int i = 0; i < 4; i++)
 					{
@@ -247,6 +255,12 @@ int GameBoard::RankBoard(const int color) const
 
 				// Knights
 				case 5:
+
+					if (gameBoard[x][y] * color > 0)
+						fitness += 5;
+					else
+						fitness -= 5;
+
 					for (int areaX = -2; areaX <= 2; areaX++)
 						for (int areaY = -2; areaY <= 2; areaY++)
 						{
@@ -268,6 +282,11 @@ int GameBoard::RankBoard(const int color) const
 
 				// Bishops
 				case 6:
+					if (gameBoard[x][y] * color > 0)
+						fitness += 6;
+					else
+						fitness -= 6;
+
 					// Check all four directions
 					for (int i = 0; i < 4; i++)
 					{
@@ -293,6 +312,11 @@ int GameBoard::RankBoard(const int color) const
 
 				// Queens
 				case 7:
+					if (gameBoard[x][y] * color > 0)
+						fitness += 7;
+					else
+						fitness -= 7;
+
 					// Check all eight directions
 					for (int i = 0; i < 8; i++)
 					{
@@ -319,6 +343,11 @@ int GameBoard::RankBoard(const int color) const
 				// Kings
 				case 9:
 				case 8:
+					if (gameBoard[x][y] * color > 0)
+						fitness += 20;
+					else
+						fitness -= 20;
+
 					// Check standard moves
 					for (int areaX = -1; areaX <= 1; areaX++)
 						for (int areaY = -1; areaY <= 1; areaY++)

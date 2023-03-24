@@ -17,35 +17,62 @@ void DekuBot::MakeMove(int maxTime)
 	auto moves = currentGame->FindMoves(aiColor);
 
 	// Calculate the maximum ammount of time the AI may search for
-	maxSearchTime = (maxTime * 60000) / moves.size();
+	maxSearchTime = maxTime * 60000;
+
+	clock_t startTime = clock();
 
 	// Best Move
-	std::pair<coordinates, coordinates> bestMove;
-	int bestScore = INT32_MIN;
-	int newScore = 0;
-
-	// Evaluate each possible move
-	for (auto& move : moves)
-	{
-		// Create a copy of the current game board
-		GameBoard copy = *currentGame;
-		// Preform the move on the copy
-		copy.MovePiece(move.first, move.second);
-		// Evaluate the result of that move
-		clock_t startTime = clock();
-		newScore = miniMaxMove(copy, INT32_MIN, INT32_MAX, 0, startTime);
-
-		// Store the best move
-		if (newScore >= bestScore)
-		{
-			bestScore = newScore;
-			bestMove.first = move.first;
-			bestMove.second = move.second;
-		}
-	}
+	std::pair<coordinates, coordinates> bestMove = breadthFirstSearch(moves, startTime);
 
 	// Preform the best move
 	currentGame->MovePiece(bestMove.first, bestMove.second);
+}
+
+// Search the tree Breadth First
+// Returns the best move after a given amount of time
+std::pair<coordinates, coordinates> DekuBot::breadthFirstSearch(std::vector<std::pair<coordinates, coordinates>>& moves, clock_t startTime)
+{
+	std::pair<coordinates, coordinates> bestMove;
+	int bestScore = INT32_MIN;
+	int newScore = 0;
+	int depth = 0;
+
+	while (difftime(clock(), startTime) <= maxSearchTime)
+	{
+		// Evaluate each possible move
+		for (auto& move : moves)
+		{
+			// Create a copy of the current game board
+			GameBoard copy = *currentGame;
+			// Preform the move on the copy
+			copy.MovePiece(move.first, move.second);
+			// Evaluate the result of that move
+			clock_t startTime = clock();
+			newScore = miniMaxMove(copy, INT32_MIN, INT32_MAX, depth, startTime);
+
+			// Store the best move
+			if (newScore > bestScore)
+			{
+				bestScore = newScore;
+				bestMove.first = move.first;
+				bestMove.second = move.second;
+			}
+
+			// Automatically return if checkmate was detected
+			if (bestScore == 1000)
+				return bestMove;
+		}
+
+		depth++;
+	}
+
+	// For fun, calculate confidence of move
+	bestScore += 1000;
+	bestScore *= 100;
+	float confidence = bestScore / 2000.f;
+	std::cout << "Confidence: " << confidence << "%" << std::endl;
+
+	return bestMove;
 }
 
 // Recursively find the best possible outcome for a move
@@ -55,13 +82,12 @@ int DekuBot::miniMaxMove(GameBoard& nextGame, int alpha, int beta, int currentDe
 	// Calculate fitness of current board
 	int fitness = nextGame.RankBoard(aiColor);
 
-	// Check that maximum time has not been reached
-	if (difftime(clock(), startTime) >= maxSearchTime)
-		return fitness;
+	// Return the closest leaf node if out of time
+	if (difftime(clock(), startTime) <= maxSearchTime)
+		currentDepth -= currentDepth / 2;
 
-
-	// Cut Search Early at depth of 1000 (Maximum Stack Depth for Windows)
-	if (currentDepth >= 1000)
+	// Return Leaf Node
+	if (currentDepth <= 0)
 		return fitness;
 
 	// Return in event of checkMate
@@ -78,7 +104,7 @@ int DekuBot::miniMaxMove(GameBoard& nextGame, int alpha, int beta, int currentDe
 			GameBoard copy = nextGame;
 
 			copy.MovePiece(move.first, move.second);
-			int newValue = miniMaxMove(copy, alpha, beta, currentDepth + 1, startTime);
+			int newValue = miniMaxMove(copy, alpha, beta, currentDepth - 1, startTime);
 			
 			if (newValue > maxValue)
 				maxValue = newValue;
@@ -103,7 +129,7 @@ int DekuBot::miniMaxMove(GameBoard& nextGame, int alpha, int beta, int currentDe
 			GameBoard copy = nextGame;
 			copy.MovePiece(move.first, move.second);
 
-			int newValue = miniMaxMove(copy, alpha, beta, currentDepth + 1, startTime);
+			int newValue = miniMaxMove(copy, alpha, beta, currentDepth - 1, startTime);
 
 			if (newValue < minValue)
 				minValue = newValue;
