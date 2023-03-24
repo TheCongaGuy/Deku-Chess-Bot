@@ -12,7 +12,7 @@ typedef std::pair<unsigned int, unsigned int> coordinates;
 
 // Holds information about the current game state
 // Inherit from sf::Drawable to allow drawing to screen
-class GameBoard : public sf::Drawable
+class GameBoard
 {
 public:
 	// Default Constructor
@@ -25,9 +25,6 @@ public:
 	// Copy Constructor
 	GameBoard(const GameBoard& rhs);
 
-	// Destructor
-	~GameBoard();
-
 	// Performs a move on the board
 	// Takes two coordinates; the location of the piece to be moved and a final position
 	// Returns true if move was made, false otherwise
@@ -37,6 +34,11 @@ public:
 	// 1 -> White | -1 -> Black
 	// Returns an integer representing it's fitness
 	int RankBoard(const int color) const;
+
+	// Finds all possible moves for a given color (1 for white, -1 for black)
+	// Returns a vector of pairs of coordinates (pair<int, int>)
+	// pair.first -> initial position | pair.second -> final position
+	std::vector<std::pair<coordinates, coordinates>> FindMoves(int color) const;
 
 	// Checks if black is in check
 	bool isBlackInCheck() const
@@ -84,25 +86,14 @@ protected:
 	// Holds a copy of the previous board position
 	piece previousPosition[8][8];
 
-	// Stores the icons for chess pieces in memory
-	sf::Texture* pieceIcons[6];
-
 	// ----- Private Methods ----- \\
 
 	// Evaluates the current board and updates pieces / flags
 	void EvaluateBoard();
 
-	// Finds all possible moves for a given color (1 for white, -1 for black)
-	// Returns a vector of pairs of coordinates (pair<int, int>)
-	// pair.first -> initial position | pair.second -> final position
-	std::vector<std::pair<coordinates, coordinates>> FindMoves(int color) const;
-
 	// Checks if a given pair of coordinates are within the bounds of the game board
 	bool InBounds(const unsigned int xCoord, const unsigned int yCoord) const
 	{ return xCoord < 8 && yCoord < 8; }
-
-	// Method to draw items to the window
-	virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const;
 
 	// KEY OF VALUES
 	// + -> White

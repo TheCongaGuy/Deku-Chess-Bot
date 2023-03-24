@@ -141,12 +141,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="dekuBot.cpp" />
     <ClCompile Include="gameBoard.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="test.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DekuBot.hpp" />
     <ClInclude Include="GameBoard.hpp" />
+    <ClInclude Include="Sprite.h" />
     <ClInclude Include="Test.hpp" />
   </ItemGroup>
   <ItemGroup>

@@ -1,14 +1,64 @@
 #include "Test.hpp"
+#include "DekuBot.hpp"
+#include "Sprite.h"
 #include <SFML/Graphics.hpp> // External Window Library
 #include <iostream>
 
 int main(int argc, char* argv[])
 {
+	int aiColor = 0;
+
+	// Get Piece Information
+	std::cout << "What Color Is The AI? (w/b): ";
+	std::string input;
+	std::cin >> input;
+	if (input[0] == 'b')
+		aiColor = -1;
+	else
+		aiColor = 1;
+
+	// Display Choice
+	std::cout << "AI Color: ";
+	if (aiColor == -1)
+		std::cout << "Black" << std::endl;
+	else
+		std::cout << "White" << std::endl;
+
+	// Get Max Search Time from user
+	std::cout << "How long may the AI search in minutes? (Negative numbers allow for no limit): ";
+	std::cin >> input;
+
+	int maxTime = std::stoi(input);
+
+	if (maxTime < 0)
+	{
+		std::cout << "WARNING: You have selected no limit to the search time. This may have unknown concequences " << std::endl
+				  << "regarding the application, results, or total time spent computing. If you would like to cap" << std::endl
+				  << "the search, please enter a positive integer now." << std::endl;
+
+		std::cin >> input;
+		maxTime = std::stoi(input);
+
+		if (maxTime < 0)
+			maxTime = INT32_MAX / 60000;
+	}
+
+	// Display Max Search Time
+	std::cout << "Deku Max Search Time: " << maxTime << " Minute(s)" << std::endl;
+
+	std::cout << "Setting Up. . ." << std::endl;
+
 	// Run a test before program start
 	runAllTests();
 
 	// Chess Board
 	GameBoard board;
+
+	// AI
+	DekuBot deku(&board, aiColor);
+
+	// Sprite Renderer
+	sprites drawable(board);
 
 	// Coordinates of the mouse
 	coordinates onClick(-1, -1);
@@ -67,8 +117,12 @@ int main(int argc, char* argv[])
 
 		// Window Refresh
 		window.clear();
-		window.draw(board);
+		window.draw(drawable);
 		window.display();
+
+		// Make an AI Move if it is AI's turn
+		if (aiColor == 1 && board.whosTurn() || aiColor == -1 && !board.whosTurn())
+			deku.MakeMove(maxTime);
 	}
 
 	return 0;
