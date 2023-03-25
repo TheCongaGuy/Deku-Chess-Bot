@@ -79,16 +79,26 @@ int DekuBot::miniMaxMove(GameBoard& nextGame, int alpha, int beta, int currentDe
 	// Calculate fitness of current board
 	int fitness = nextGame.RankBoard(aiColor);
 
+	// Bias fitness based on depth of search
+	if (aiColor == 1 && nextGame.whosTurn() || aiColor == -1 && !nextGame.whosTurn())
+		fitness += currentDepth;
+	fitness -= currentDepth;
+
 	// Return Leaf Node
 	if (currentDepth <= 0)
 		return fitness;
 
 	// Return invalid if search time was reached
 	if (difftime(clock(), startTime) >= maxSearchTime)
-		return 0;
+	{
+		if (aiColor == 1 && nextGame.whosTurn() || aiColor == -1 && !nextGame.whosTurn())
+			return INT32_MAX;
+
+		return INT32_MIN;
+	}
 
 	// Return if checkmate was reached
-	if (fitness == 1000 || fitness == -1000)
+	if (fitness >= 1000 || fitness <= -1000)
 		return fitness;
 
 
