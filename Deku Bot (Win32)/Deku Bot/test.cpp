@@ -241,12 +241,12 @@ void testBoardFitness()
 	}
 
 	// Test check case
-	if (checkTest.RankBoard(1) != -507)
+	if (checkTest.RankBoard(1) != -508)
 	{
 		std::cout << "Failed White Check Test" << std::endl;
 		exit(-1);
 	}
-	if (checkTest.RankBoard(-1) != 507)
+	if (checkTest.RankBoard(-1) != 508)
 	{
 		std::cout << "Failed White Check Test" << std::endl;
 		exit(-2);
@@ -363,6 +363,151 @@ void testBoardFitness()
 	if (queenPiece.RankBoard(-1) != -34)
 	{
 		std::cout << "Failed Queen" << std::endl;
+		exit(-2);
+	}
+
+	// [Test Check Scenarios]
+	// Rook
+	customStart[4][3] = 0;
+	customStart[0][5] = 3;
+	GameBoard whiteRookCheck(customStart);
+	if (whiteRookCheck.RankBoard(1) != 518)
+	{
+		std::cout << "Failed Check White Rook" << std::endl;
+		exit(-1);
+	}
+	if (whiteRookCheck.RankBoard(-1) != -518)
+	{
+		std::cout << "Failed Check White Rook" << std::endl;
+		exit(-2);
+	}
+
+	customStart[0][5] = 0;
+	customStart[7][5] = -4;
+	GameBoard blackRookCheck(customStart);
+	if (blackRookCheck.RankBoard(-1) != 518)
+	{
+		std::cout << "Failed Check Black Rook" << std::endl;
+		exit(-1);
+	}
+	if (blackRookCheck.RankBoard(1) != -518)
+	{
+		std::cout << "Failed Check Black Rook" << std::endl;
+		exit(-2);
+	}
+
+	// Knight
+	customStart[7][5] = 0;
+	customStart[2][1] = 5;
+	GameBoard whiteKnightCheck(customStart);
+	if (whiteKnightCheck.RankBoard(1) != 512)
+	{
+		std::cout << "Failed Check White Knight" << std::endl;
+		exit(-1);
+	}
+	if (whiteKnightCheck.RankBoard(-1) != -512)
+	{
+		std::cout << "Failed Check White Knight" << std::endl;
+		exit(-2);
+	}
+
+	customStart[2][1] = 0;
+	customStart[5][6] = -5;
+
+	GameBoard blackKnightCheck(customStart);
+	if (blackKnightCheck.RankBoard(1) != -512)
+	{
+		std::cout << "Failed Check Black Knight" << std::endl;
+		exit(-1);
+	}
+	if (blackKnightCheck.RankBoard(-1) != 512)
+	{
+		std::cout << "Failed Check Black Knight" << std::endl;
+		exit(-2);
+	}
+
+	customStart[5][6] = 5;
+
+	GameBoard noCheckKnight(customStart);
+	if (noCheckKnight.RankBoard(1) == -512)
+	{
+		std::cout << "Failed Check Knight False Flag" << std::endl;
+		exit(-1);
+	}
+	if (noCheckKnight.RankBoard(-1) == 512)
+	{
+		std::cout << "Failed Check Knight False Flag" << std::endl;
+		exit(-2);
+	}
+
+	customStart[5][6] = 0;
+	customStart[2][1] = -5;
+	GameBoard noCheckKnightTwo(customStart);
+	if (noCheckKnightTwo.RankBoard(-1) == -512)
+	{
+		std::cout << "Failed Check Knight False Flag" << std::endl;
+		exit(-3);
+	}
+	if (noCheckKnightTwo.RankBoard(1) == 512)
+	{
+		std::cout << "Failed Check Knight False Flag" << std::endl;
+		exit(-4);
+	}
+
+	// BishopS
+	customStart[2][1] = 0;
+	customStart[3][3] = 6;
+	GameBoard whiteBishopCheck(customStart);
+	if (whiteBishopCheck.RankBoard(1) != 521)
+	{
+		std::cout << "Failed Check White Bishop" << std::endl;
+		exit(-1);
+	}
+	if (whiteBishopCheck.RankBoard(-1) != -521)
+	{
+		std::cout << "Failed Check White Bishop" << std::endl;
+		exit(-2);
+	}
+
+	customStart[3][3] = -6;
+
+	GameBoard blackBishopCheck(customStart);
+	if (blackBishopCheck.RankBoard(1) != -521)
+	{
+		std::cout << "Failed Check Black Bishop" << std::endl;
+		exit(-1);
+	}
+	if (blackBishopCheck.RankBoard(-1) != 521)
+	{
+		std::cout << "Failed Check Black Bishop" << std::endl;
+		exit(-2);
+	}
+
+	// Queen
+	customStart[3][3] = 7;
+	GameBoard whiteQueenCheck(customStart);
+	if (whiteQueenCheck.RankBoard(1) != 536)
+	{
+		std::cout << "Failed Check White Queen" << std::endl;
+		exit(-1);
+	}
+	if (whiteQueenCheck.RankBoard(-1) != -536)
+	{
+		std::cout << "Failed Check White Queen" << std::endl;
+		exit(-2);
+	}
+
+	customStart[3][3] = -7;
+
+	GameBoard blackQueenCheck(customStart);
+	if (blackQueenCheck.RankBoard(1) != -536)
+	{
+		std::cout << "Failed Check Black Queen" << std::endl;
+		exit(-1);
+	}
+	if (blackQueenCheck.RankBoard(-1) != 536)
+	{
+		std::cout << "Failed Check Black Queen" << std::endl;
 		exit(-2);
 	}
 }

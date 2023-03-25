@@ -177,17 +177,37 @@ int GameBoard::RankBoard(const int color) const
 						if (InBounds(x + 1, y + 1))
 						{
 							if (gameBoard[x][y] * color > 0)
+							{
+								// Award Extra Fitness if piece is targeting another
+								if (gameBoard[x + 1][y + 1] != 0)
+									fitness++;
 								fitness++;
+							}
 							else
+							{
+								// Award Extra Fitness if piece is targeting another
+								if (gameBoard[x + 1][y + 1] != 0)
+									fitness--;
 								fitness--;
+							}
 						}
 
 						if (InBounds(x - 1, y + 1))
 						{
 							if (gameBoard[x][y] * color > 0)
+							{
+								// Award Extra Fitness if piece is targeting another
+								if (gameBoard[x - 1][y + 1] != 0)
+									fitness++;
 								fitness++;
+							}
 							else
+							{
+								// Award Extra Fitness if piece is targeting another
+								if (gameBoard[x - 1][y + 1] != 0)
+									fitness--;
 								fitness--;
+							}
 						}
 					}
 
@@ -204,17 +224,37 @@ int GameBoard::RankBoard(const int color) const
 						if (InBounds(x + 1, y - 1))
 						{
 							if (gameBoard[x][y] * color > 0)
+							{
+								// Award Extra Fitness if piece is targeting another
+								if (gameBoard[x + 1][y - 1] != 0)
+									fitness++;
 								fitness++;
+							}
 							else
+							{
+								// Award Extra Fitness if piece is targeting another
+								if (gameBoard[x + 1][y - 1] != 0)
+									fitness--;
 								fitness--;
+							}
 						}
 
 						if (InBounds(x - 1, y - 1))
 						{
 							if (gameBoard[x][y] * color > 0)
+							{
+								// Award Extra Fitness if piece is targeting another
+								if (gameBoard[x - 1][y - 1] != 0)
+									fitness++;
 								fitness++;
+							}
 							else
+							{
+								// Award Extra Fitness if piece is targeting another
+								if (gameBoard[x - 1][y - 1] != 0)
+									fitness--;
 								fitness--;
+							}
 						}
 					}
 					break;
@@ -240,9 +280,19 @@ int GameBoard::RankBoard(const int color) const
 						while (InBounds(newX, newY))
 						{
 							if (gameBoard[x][y] * color > 0)
+							{
+								// Award Extra Fitness if piece is targeting another
+								if (gameBoard[newX][newY] != 0)
+									fitness++;
 								fitness++;
+							}
 							else
+							{
+								// Award Extra Fitness if piece is targeting another
+								if (gameBoard[newX][newY] != 0)
+									fitness--;
 								fitness--;
+							}
 
 							if (gameBoard[newX][newY] != 0)
 								break;
@@ -272,9 +322,19 @@ int GameBoard::RankBoard(const int color) const
 								if (InBounds(newX, newY))
 								{
 									if (gameBoard[x][y] * color > 0)
+									{
+										// Award Extra Fitness if piece is targeting another
+										if (gameBoard[newX][newY] != 0)
+											fitness++;
 										fitness++;
+									}
 									else
+									{
+										// Award Extra Fitness if piece is targeting another
+										if (gameBoard[newX][newY] != 0)
+											fitness--;
 										fitness--;
+									}
 								}
 							}
 						}
@@ -297,9 +357,19 @@ int GameBoard::RankBoard(const int color) const
 						while (InBounds(newX, newY))
 						{
 							if (gameBoard[x][y] * color > 0)
+							{
+								// Award Extra Fitness if piece is targeting another
+								if (gameBoard[newX][newY] != 0)
+									fitness++;
 								fitness++;
+							}
 							else
+							{
+								// Award Extra Fitness if piece is targeting another
+								if (gameBoard[newX][newY] != 0)
+									fitness--;
 								fitness--;
+							}
 
 							if (gameBoard[newX][newY] != 0)
 								break;
@@ -327,9 +397,19 @@ int GameBoard::RankBoard(const int color) const
 						while (InBounds(newX, newY))
 						{
 							if (gameBoard[x][y] * color > 0)
+							{
+								// Award Extra Fitness if piece is targeting another
+								if (gameBoard[newX][newY] != 0)
+									fitness++;
 								fitness++;
+							}
 							else
+							{
+								// Award Extra Fitness if piece is targeting another
+								if (gameBoard[newX][newY] != 0)
+									fitness--;
 								fitness--;
+							}
 
 							if (gameBoard[newX][newY] != 0)
 								break;
@@ -354,9 +434,17 @@ int GameBoard::RankBoard(const int color) const
 							if (InBounds(x + areaX, y + areaY) && (areaX != 0 || areaY != 0))
 							{
 								if (gameBoard[x][y] * color > 0)
+								{
+									if (gameBoard[x][y] != 0)
+										fitness++;
 									fitness++;
+								}
 								else
+								{
+									if (gameBoard[x][y] != 0)
+										fitness--;
 									fitness--;
+								}
 							}
 
 					// Flag kings existance
@@ -583,7 +671,7 @@ void GameBoard::EvaluateBoard()
 	for (int i = 0; i < 4; i++)
 	{
 		int newX = blackKingX + directionX[i];
-		int newY = blackKingX + directionY[i];
+		int newY = blackKingY + directionY[i];
 		while (InBounds(newX, newY))
 		{
 			// Friendly piece blocks path
@@ -604,7 +692,7 @@ void GameBoard::EvaluateBoard()
 		int directionX[4] = { 1, 1, -1, -1 };
 		int directionY[4] = { 1, -1, 1, -1 };
 		int newX = whiteKingX + directionX[i];
-		int newY = whiteKingX + directionY[i];
+		int newY = whiteKingY + directionY[i];
 		while (InBounds(newX, newY))
 		{
 			// Friendly piece blocks path
@@ -613,7 +701,7 @@ void GameBoard::EvaluateBoard()
 
 			// Bishop or Queen creates check
 			if (gameBoard[newX][newY] == -6 || gameBoard[newX][newY] == -7)
-				blackInCheck = true;
+				whiteInCheck = true;
 
 			newX += directionX[i];
 			newY += directionY[i];
@@ -656,7 +744,7 @@ void GameBoard::EvaluateBoard()
 
 			// Rook or Queen creates check
 			if (gameBoard[newX][newY] == -3 || gameBoard[newX][newY] == -4 || gameBoard[newX][newY] == -7)
-				blackInCheck = true;
+				whiteInCheck = true;
 
 			newX += directionX[i];
 			newY += directionY[i];

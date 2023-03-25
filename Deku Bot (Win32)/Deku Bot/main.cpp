@@ -116,8 +116,16 @@ int main(int argc, char* argv[])
 				onRelease.second = sf::Mouse::getPosition(window).y / tileWidth;
 
 				board.MovePiece(onClick, onRelease);
+
+				// Rank the player's move
+				int bestScore = board.RankBoard(aiColor);
+				bestScore += 1000;
+				bestScore *= 100;
+				float confidence = bestScore / 2000.f;
+				std::cout << "Current: " << confidence << "%" << std::endl;
 			}
 		}
+
 
 		// Window Refresh
 		window.clear();

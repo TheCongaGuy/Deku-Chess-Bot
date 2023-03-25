@@ -33,9 +33,11 @@ void DekuBot::MakeMove(int maxTime)
 std::pair<coordinates, coordinates> DekuBot::breadthFirstSearch(std::vector<std::pair<coordinates, coordinates>>& moves, clock_t startTime)
 {
 	std::pair<coordinates, coordinates> bestMove;
+	bestMove.first = coordinates(-1, -1);
+	bestMove.second = coordinates(-1, -1);
 	int bestScore = INT32_MIN;
 	int newScore = 0;
-	int depth = 0;
+	int depth = 1;
 
 	while (difftime(clock(), startTime) <= maxSearchTime)
 	{
@@ -47,7 +49,6 @@ std::pair<coordinates, coordinates> DekuBot::breadthFirstSearch(std::vector<std:
 			// Preform the move on the copy
 			copy.MovePiece(move.first, move.second);
 			// Evaluate the result of that move
-			clock_t startTime = clock();
 			newScore = miniMaxMove(copy, INT32_MIN, INT32_MAX, depth, startTime);
 
 			// Store the best move
@@ -57,10 +58,6 @@ std::pair<coordinates, coordinates> DekuBot::breadthFirstSearch(std::vector<std:
 				bestMove.first = move.first;
 				bestMove.second = move.second;
 			}
-
-			// Automatically return if checkmate was detected
-			if (bestScore == 1000)
-				return bestMove;
 		}
 
 		depth++;
@@ -82,17 +79,18 @@ int DekuBot::miniMaxMove(GameBoard& nextGame, int alpha, int beta, int currentDe
 	// Calculate fitness of current board
 	int fitness = nextGame.RankBoard(aiColor);
 
-	// Return the closest leaf node if out of time
-	if (difftime(clock(), startTime) <= maxSearchTime)
-		currentDepth -= currentDepth / 2;
-
 	// Return Leaf Node
 	if (currentDepth <= 0)
 		return fitness;
 
-	// Return in event of checkMate
+	// Return invalid if search time was reached
+	if (difftime(clock(), startTime) >= maxSearchTime)
+		return 0;
+
+	// Return if checkmate was reached
 	if (fitness == 1000 || fitness == -1000)
 		return fitness;
+
 
 	// Find best move if it is AI's turn
 	if (aiColor == 1 && nextGame.whosTurn() || aiColor == -1 && !nextGame.whosTurn())
