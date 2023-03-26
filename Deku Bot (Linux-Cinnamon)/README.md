@@ -3,7 +3,7 @@
 
 ---
 
-# Deku Chess Bot - Linux Cinnamon
+# Deku Chess Bot - Linux Cinnamon (64-bit)
 
 
 The following files are a port of the source code for Deku implemented in Windows 10, for Windows 32-bit systems and developed in Visual Studio Community 2022. While originally Deku's objective was to view as deep as it could to find the best possible move, it quickly became appearent that no matter how long Deku searched, a large majority of moves were missed, leading to the second improved version; breadth-first minimax. Otherwise known as Iterative Deepening. While nodes will be revisited more often than depth-first minimax, Iterative Deepening ensures that it does not search too deep to undermine other parts of the tree. So while breadth-first won't search nearly as deep as depth-first, the quality of search is vastly improved. Something I noticed in the port is that it seems to underperform compared to its Windows counterpart. Where on the first move Deku averages a depth of roughly 20 on Windows, a depth of 7 is achieved in the same time on Linux. This could be because of my Virtual Machine, or the change in timer from difftime() to chrono. Regardless, Deku performs similarly.
