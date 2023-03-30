@@ -11,7 +11,7 @@ DekuBot::DekuBot(GameBoard* board, const int color)
 }
 
 // Makes a move on the chess board
-void DekuBot::MakeMove(int maxTime)
+void DekuBot::MakeMove(float maxTime)
 {
 	// Find all possible moves
 	auto moves = currentGame->FindMoves(aiColor);
@@ -39,7 +39,7 @@ std::pair<coordinates, coordinates> DekuBot::breadthFirstSearch(std::vector<std:
 	int newScore = 0;
 	int depth = 1;
 
-	while (difftime(clock(), startTime) <= maxSearchTime)
+	while (difftime(clock(), startTime) <= maxSearchTime && bestScore < 1000)
 	{
 		// Evaluate each possible move
 		for (auto& move : moves)
@@ -79,10 +79,9 @@ int DekuBot::miniMaxMove(GameBoard& nextGame, int alpha, int beta, int currentDe
 	// Calculate fitness of current board
 	int fitness = nextGame.RankBoard(aiColor);
 
-	// Bias fitness based on depth of search
-	if (aiColor == 1 && nextGame.whosTurn() || aiColor == -1 && !nextGame.whosTurn())
-		fitness += currentDepth;
-	fitness -= currentDepth;
+	// Return if checkmate was reached
+	if (fitness >= 1000 || fitness <= -1000)
+		return fitness;
 
 	// Return Leaf Node
 	if (currentDepth <= 0)
@@ -90,17 +89,7 @@ int DekuBot::miniMaxMove(GameBoard& nextGame, int alpha, int beta, int currentDe
 
 	// Return invalid if search time was reached
 	if (difftime(clock(), startTime) >= maxSearchTime)
-	{
-		if (aiColor == 1 && nextGame.whosTurn() || aiColor == -1 && !nextGame.whosTurn())
-			return INT32_MAX;
-
-		return INT32_MIN;
-	}
-
-	// Return if checkmate was reached
-	if (fitness >= 1000 || fitness <= -1000)
-		return fitness;
-
+		return 0;
 
 	// Find best move if it is AI's turn
 	if (aiColor == 1 && nextGame.whosTurn() || aiColor == -1 && !nextGame.whosTurn())

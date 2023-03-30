@@ -1,6 +1,8 @@
 #pragma once
 
 #include "GameBoard.hpp"
+#include "DekuBot.hpp"
+#include "Sprite.h"
 
 // White Box Testing Struct
 struct BoardTest : public GameBoard
@@ -23,3 +25,9 @@ void testBoardFitness();
 
 // Test Movement Method
 void testMoveMethod();
+
+// Runs a game versus two AI's to allow for observation of moves
+void AIGame();
+
+// Tests the AI with certain board configurations
+void AISituations();

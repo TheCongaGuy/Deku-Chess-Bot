@@ -240,18 +240,6 @@ void testBoardFitness()
 		exit(-2);
 	}
 
-	// Test check case
-	if (checkTest.RankBoard(1) != -508)
-	{
-		std::cout << "Failed White Check Test" << std::endl;
-		exit(-1);
-	}
-	if (checkTest.RankBoard(-1) != 508)
-	{
-		std::cout << "Failed White Check Test" << std::endl;
-		exit(-2);
-	}
-
 	// Test win/loss case
 	if (winTest.RankBoard(1) != 1000)
 	{
@@ -312,12 +300,12 @@ void testBoardFitness()
 	// Rooks
 	customStart[3][3] = 3;
 	GameBoard rookPiece(customStart);
-	if (rookPiece.RankBoard(1) != 17)
+	if (rookPiece.RankBoard(1) != 28)
 	{
 		std::cout << "Failed Rook" << std::endl;
 		exit(-1);
 	}
-	if (rookPiece.RankBoard(-1) != -17)
+	if (rookPiece.RankBoard(-1) != -28)
 	{
 		std::cout << "Failed Rook" << std::endl;
 		exit(-2);
@@ -326,12 +314,12 @@ void testBoardFitness()
 	// Knights
 	customStart[3][3] = 5;
 	GameBoard knightPiece(customStart);
-	if (knightPiece.RankBoard(1) != 13)
+	if (knightPiece.RankBoard(1) != 16)
 	{
 		std::cout << "Failed Knight" << std::endl;
 		exit(-1);
 	}
-	if (knightPiece.RankBoard(-1) != -13)
+	if (knightPiece.RankBoard(-1) != -16)
 	{
 		std::cout << "Failed Knight" << std::endl;
 		exit(-2);
@@ -341,12 +329,12 @@ void testBoardFitness()
 	customStart[3][3] = 0;
 	customStart[4][3] = 6;
 	GameBoard bishopPiece(customStart);
-	if (bishopPiece.RankBoard(1) != 19)
+	if (bishopPiece.RankBoard(1) != 26)
 	{
 		std::cout << "Failed Bishop" << std::endl;
 		exit(-1);
 	}
-	if (bishopPiece.RankBoard(-1) != -19)
+	if (bishopPiece.RankBoard(-1) != -26)
 	{
 		std::cout << "Failed Bishop" << std::endl;
 		exit(-2);
@@ -355,159 +343,14 @@ void testBoardFitness()
 	// Queens
 	customStart[4][3] = 7;
 	GameBoard queenPiece(customStart);
-	if (queenPiece.RankBoard(1) != 34)
+	if (queenPiece.RankBoard(1) != 54)
 	{
 		std::cout << "Failed Queen" << std::endl;
 		exit(-1);
 	}
-	if (queenPiece.RankBoard(-1) != -34)
+	if (queenPiece.RankBoard(-1) != -54)
 	{
 		std::cout << "Failed Queen" << std::endl;
-		exit(-2);
-	}
-
-	// [Test Check Scenarios]
-	// Rook
-	customStart[4][3] = 0;
-	customStart[0][5] = 3;
-	GameBoard whiteRookCheck(customStart);
-	if (whiteRookCheck.RankBoard(1) != 518)
-	{
-		std::cout << "Failed Check White Rook" << std::endl;
-		exit(-1);
-	}
-	if (whiteRookCheck.RankBoard(-1) != -518)
-	{
-		std::cout << "Failed Check White Rook" << std::endl;
-		exit(-2);
-	}
-
-	customStart[0][5] = 0;
-	customStart[7][5] = -4;
-	GameBoard blackRookCheck(customStart);
-	if (blackRookCheck.RankBoard(-1) != 518)
-	{
-		std::cout << "Failed Check Black Rook" << std::endl;
-		exit(-1);
-	}
-	if (blackRookCheck.RankBoard(1) != -518)
-	{
-		std::cout << "Failed Check Black Rook" << std::endl;
-		exit(-2);
-	}
-
-	// Knight
-	customStart[7][5] = 0;
-	customStart[2][1] = 5;
-	GameBoard whiteKnightCheck(customStart);
-	if (whiteKnightCheck.RankBoard(1) != 512)
-	{
-		std::cout << "Failed Check White Knight" << std::endl;
-		exit(-1);
-	}
-	if (whiteKnightCheck.RankBoard(-1) != -512)
-	{
-		std::cout << "Failed Check White Knight" << std::endl;
-		exit(-2);
-	}
-
-	customStart[2][1] = 0;
-	customStart[5][6] = -5;
-
-	GameBoard blackKnightCheck(customStart);
-	if (blackKnightCheck.RankBoard(1) != -512)
-	{
-		std::cout << "Failed Check Black Knight" << std::endl;
-		exit(-1);
-	}
-	if (blackKnightCheck.RankBoard(-1) != 512)
-	{
-		std::cout << "Failed Check Black Knight" << std::endl;
-		exit(-2);
-	}
-
-	customStart[5][6] = 5;
-
-	GameBoard noCheckKnight(customStart);
-	if (noCheckKnight.RankBoard(1) == -512)
-	{
-		std::cout << "Failed Check Knight False Flag" << std::endl;
-		exit(-1);
-	}
-	if (noCheckKnight.RankBoard(-1) == 512)
-	{
-		std::cout << "Failed Check Knight False Flag" << std::endl;
-		exit(-2);
-	}
-
-	customStart[5][6] = 0;
-	customStart[2][1] = -5;
-	GameBoard noCheckKnightTwo(customStart);
-	if (noCheckKnightTwo.RankBoard(-1) == -512)
-	{
-		std::cout << "Failed Check Knight False Flag" << std::endl;
-		exit(-3);
-	}
-	if (noCheckKnightTwo.RankBoard(1) == 512)
-	{
-		std::cout << "Failed Check Knight False Flag" << std::endl;
-		exit(-4);
-	}
-
-	// BishopS
-	customStart[2][1] = 0;
-	customStart[3][3] = 6;
-	GameBoard whiteBishopCheck(customStart);
-	if (whiteBishopCheck.RankBoard(1) != 521)
-	{
-		std::cout << "Failed Check White Bishop" << std::endl;
-		exit(-1);
-	}
-	if (whiteBishopCheck.RankBoard(-1) != -521)
-	{
-		std::cout << "Failed Check White Bishop" << std::endl;
-		exit(-2);
-	}
-
-	customStart[3][3] = -6;
-
-	GameBoard blackBishopCheck(customStart);
-	if (blackBishopCheck.RankBoard(1) != -521)
-	{
-		std::cout << "Failed Check Black Bishop" << std::endl;
-		exit(-1);
-	}
-	if (blackBishopCheck.RankBoard(-1) != 521)
-	{
-		std::cout << "Failed Check Black Bishop" << std::endl;
-		exit(-2);
-	}
-
-	// Queen
-	customStart[3][3] = 7;
-	GameBoard whiteQueenCheck(customStart);
-	if (whiteQueenCheck.RankBoard(1) != 536)
-	{
-		std::cout << "Failed Check White Queen" << std::endl;
-		exit(-1);
-	}
-	if (whiteQueenCheck.RankBoard(-1) != -536)
-	{
-		std::cout << "Failed Check White Queen" << std::endl;
-		exit(-2);
-	}
-
-	customStart[3][3] = -7;
-
-	GameBoard blackQueenCheck(customStart);
-	if (blackQueenCheck.RankBoard(1) != -536)
-	{
-		std::cout << "Failed Check Black Queen" << std::endl;
-		exit(-1);
-	}
-	if (blackQueenCheck.RankBoard(-1) != 536)
-	{
-		std::cout << "Failed Check Black Queen" << std::endl;
 		exit(-2);
 	}
 }
@@ -529,4 +372,98 @@ void testMoveMethod()
 		std::cout << "Failed Number Of Moves Check" << std::endl;
 		exit(-2);
 	}
+}
+
+// Runs a game versus two AI's to allow for observation of moves
+void AIGame()
+{
+	// Chess Board
+	GameBoard board;
+
+	// AI
+	DekuBot white(&board, 1);
+	DekuBot black(&board, -1);
+
+	// Sprite Renderer
+	sprites drawable(board);
+
+	// Get the resolution of the user's monitor
+	sf::VideoMode userMonitor = sf::VideoMode::getDesktopMode();
+
+	// Find the smallest dimension
+	unsigned int smallestDimension = userMonitor.height;
+
+	if (smallestDimension > userMonitor.width)
+		smallestDimension = userMonitor.width;
+
+	// Scale the window to 3/4 the user's minimum screen dimension
+	smallestDimension = (unsigned int)(smallestDimension * (3.f / 4.f));
+
+	// Generate a new VideoMode for the window
+	sf::VideoMode gameWindow(smallestDimension, smallestDimension);
+
+	// Render Window
+	sf::RenderWindow window(gameWindow, "Deku VS Deku");
+
+	// Main Loop
+	while (window.isOpen())
+	{
+		// Event Manager
+		sf::Event event;
+		if (window.pollEvent(event))
+		{
+			// Close window when red x is pressed
+			if (event.type == sf::Event::Closed)
+				window.close();
+		}
+
+		// Window Refresh
+		window.clear();
+		window.draw(drawable);
+		window.display();
+
+		// Make an AI Move if it is AI's turn
+		if (board.whosTurn())
+			white.MakeMove(0.5);
+		else
+			black.MakeMove(0.5);
+	}
+}
+
+// Tests the AI with certain board configurations
+void AISituations()
+{
+	// Custom Start Boards
+	piece customStart[8][8] = { 0 };
+	customStart[4][7] = 9;
+	customStart[4][0] = -9;
+	customStart[4][4] = 7;
+
+	GameBoard testStart(customStart);
+
+	DekuBot test(&testStart, 1);
+
+	test.MakeMove(0.5);
+
+	if (testStart.RankBoard(1) != 1000)
+	{
+		std::cout << "Failed Deku Checkmate" << std::endl;
+		exit(-1);
+	}
+
+	piece checkmateInOne[8][8] = {
+		{-4, 0, -6, -7, -9, -6, -5, -4},
+		{-1, -1, -1, -1, -1, -1, -1, -1},
+		{0, 0, -5, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, -1, 0, 0, 0},
+		{0, 0, 6, 0, 1, 0, 0, 0},
+		{0, 0, 0, 0, 0, 7, 0, 0},
+		{1, 1, 1, 1, 0, 1, 1, 1},
+		{4, 5, 6, 0, 9, 0, 5, 4}
+	};
+	GameBoard checkInOne(checkmateInOne);
+
+	DekuBot testTwo(&checkInOne, 1);
+
+	testTwo.MakeMove(0.5);
 }

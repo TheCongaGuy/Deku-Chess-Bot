@@ -145,49 +145,37 @@ int GameBoard::RankBoard(const int color) const
 	if (blackInCheck && whiteInCheck)
 			return 0;
 
-	// Next check for checks
-	if (color == 1 && blackInCheck)
-		fitness += 500;
-	if (color == 1 && whiteInCheck)
-		fitness -= 500;
-
-	if (color == -1 && whiteInCheck)
-		fitness += 500;
-	if (color == -1 && blackInCheck)
-		fitness -= 500;
-
 	// Check each grid space
 	for (int x = 0; x < 8; x++)
 		for (int y = 0; y < 8; y++)
+		{
+			if (gameBoard[x][y] * color > 0 && previousPosition[x][y] * color < 0)
+				fitness += abs(previousPosition[x][y]);
+			if (gameBoard[x][y] * color < 0 && previousPosition[x][y] * color > 0)
+				fitness -= abs(previousPosition[x][y]);
+
 			switch (abs(gameBoard[x][y]))
 			{
 				// Pawns
 				case 1:
 				case 2:
+					if (gameBoard[x][y] * color > 0)
+						fitness += 2;
+					else
+						fitness -= 2;
+
 					// For black pawns
 					if (gameBoard[x][y] < 0)
 					{
-						// Add their progress to fitness
-						if (gameBoard[x][y] * color > 0)
-							fitness += (y - 1);
-						else
-							fitness -= (y - 1);
-
 						// Check diagonals
 						if (InBounds(x + 1, y + 1))
 						{
 							if (gameBoard[x][y] * color > 0)
 							{
-								// Award Extra Fitness if piece is targeting another
-								if (gameBoard[x + 1][y + 1] != 0)
-									fitness++;
 								fitness++;
 							}
 							else
 							{
-								// Award Extra Fitness if piece is targeting another
-								if (gameBoard[x + 1][y + 1] != 0)
-									fitness--;
 								fitness--;
 							}
 						}
@@ -196,16 +184,10 @@ int GameBoard::RankBoard(const int color) const
 						{
 							if (gameBoard[x][y] * color > 0)
 							{
-								// Award Extra Fitness if piece is targeting another
-								if (gameBoard[x - 1][y + 1] != 0)
-									fitness++;
 								fitness++;
 							}
 							else
 							{
-								// Award Extra Fitness if piece is targeting another
-								if (gameBoard[x - 1][y + 1] != 0)
-									fitness--;
 								fitness--;
 							}
 						}
@@ -214,27 +196,15 @@ int GameBoard::RankBoard(const int color) const
 					// For white pawns
 					if (gameBoard[x][y] > 0)
 					{
-						// Add their progress to fitness
-						if (gameBoard[x][y] * color > 0)
-							fitness += (6 - y);
-						else
-							fitness -= (6 - y);
-
 						// Check diagonals
 						if (InBounds(x + 1, y - 1))
 						{
 							if (gameBoard[x][y] * color > 0)
 							{
-								// Award Extra Fitness if piece is targeting another
-								if (gameBoard[x + 1][y - 1] != 0)
-									fitness++;
 								fitness++;
 							}
 							else
 							{
-								// Award Extra Fitness if piece is targeting another
-								if (gameBoard[x + 1][y - 1] != 0)
-									fitness--;
 								fitness--;
 							}
 						}
@@ -243,16 +213,10 @@ int GameBoard::RankBoard(const int color) const
 						{
 							if (gameBoard[x][y] * color > 0)
 							{
-								// Award Extra Fitness if piece is targeting another
-								if (gameBoard[x - 1][y - 1] != 0)
-									fitness++;
 								fitness++;
 							}
 							else
 							{
-								// Award Extra Fitness if piece is targeting another
-								if (gameBoard[x - 1][y - 1] != 0)
-									fitness--;
 								fitness--;
 							}
 						}
@@ -261,15 +225,11 @@ int GameBoard::RankBoard(const int color) const
 
 				// Rooks
 				case 4:
-					if (gameBoard[x][y] * color > 0)
-						fitness++;
-					else
-						fitness--;
 				case 3:
 					if (gameBoard[x][y] * color > 0)
-						fitness += 3;
+						fitness += 14;
 					else
-						fitness -= 3;
+						fitness -= 14;
 					// Check all four directions
 					for (int i = 0; i < 4; i++)
 					{
@@ -281,16 +241,10 @@ int GameBoard::RankBoard(const int color) const
 						{
 							if (gameBoard[x][y] * color > 0)
 							{
-								// Award Extra Fitness if piece is targeting another
-								if (gameBoard[newX][newY] != 0)
-									fitness++;
 								fitness++;
 							}
 							else
 							{
-								// Award Extra Fitness if piece is targeting another
-								if (gameBoard[newX][newY] != 0)
-									fitness--;
 								fitness--;
 							}
 
@@ -307,9 +261,9 @@ int GameBoard::RankBoard(const int color) const
 				case 5:
 
 					if (gameBoard[x][y] * color > 0)
-						fitness += 5;
+						fitness += 8;
 					else
-						fitness -= 5;
+						fitness -= 8;
 
 					for (int areaX = -2; areaX <= 2; areaX++)
 						for (int areaY = -2; areaY <= 2; areaY++)
@@ -323,16 +277,10 @@ int GameBoard::RankBoard(const int color) const
 								{
 									if (gameBoard[x][y] * color > 0)
 									{
-										// Award Extra Fitness if piece is targeting another
-										if (gameBoard[newX][newY] != 0)
-											fitness++;
 										fitness++;
 									}
 									else
 									{
-										// Award Extra Fitness if piece is targeting another
-										if (gameBoard[newX][newY] != 0)
-											fitness--;
 										fitness--;
 									}
 								}
@@ -343,9 +291,9 @@ int GameBoard::RankBoard(const int color) const
 				// Bishops
 				case 6:
 					if (gameBoard[x][y] * color > 0)
-						fitness += 6;
+						fitness += 13;
 					else
-						fitness -= 6;
+						fitness -= 13;
 
 					// Check all four directions
 					for (int i = 0; i < 4; i++)
@@ -358,16 +306,10 @@ int GameBoard::RankBoard(const int color) const
 						{
 							if (gameBoard[x][y] * color > 0)
 							{
-								// Award Extra Fitness if piece is targeting another
-								if (gameBoard[newX][newY] != 0)
-									fitness++;
 								fitness++;
 							}
 							else
 							{
-								// Award Extra Fitness if piece is targeting another
-								if (gameBoard[newX][newY] != 0)
-									fitness--;
 								fitness--;
 							}
 
@@ -383,9 +325,9 @@ int GameBoard::RankBoard(const int color) const
 				// Queens
 				case 7:
 					if (gameBoard[x][y] * color > 0)
-						fitness += 7;
+						fitness += 27;
 					else
-						fitness -= 7;
+						fitness -= 27;
 
 					// Check all eight directions
 					for (int i = 0; i < 8; i++)
@@ -398,16 +340,10 @@ int GameBoard::RankBoard(const int color) const
 						{
 							if (gameBoard[x][y] * color > 0)
 							{
-								// Award Extra Fitness if piece is targeting another
-								if (gameBoard[newX][newY] != 0)
-									fitness++;
 								fitness++;
 							}
 							else
 							{
-								// Award Extra Fitness if piece is targeting another
-								if (gameBoard[newX][newY] != 0)
-									fitness--;
 								fitness--;
 							}
 
@@ -423,29 +359,6 @@ int GameBoard::RankBoard(const int color) const
 				// Kings
 				case 9:
 				case 8:
-					if (gameBoard[x][y] * color > 0)
-						fitness += 20;
-					else
-						fitness -= 20;
-
-					// Check standard moves
-					for (int areaX = -1; areaX <= 1; areaX++)
-						for (int areaY = -1; areaY <= 1; areaY++)
-							if (InBounds(x + areaX, y + areaY) && (areaX != 0 || areaY != 0))
-							{
-								if (gameBoard[x][y] * color > 0)
-								{
-									if (gameBoard[x][y] != 0)
-										fitness++;
-									fitness++;
-								}
-								else
-								{
-									if (gameBoard[x][y] != 0)
-										fitness--;
-									fitness--;
-								}
-							}
 
 					// Flag kings existance
 					if (!whiteKing && gameBoard[x][y] > 0)
@@ -454,6 +367,7 @@ int GameBoard::RankBoard(const int color) const
 						blackKing = true;
 					break;
 			}
+		}
 
 
 	// Check that kings exist

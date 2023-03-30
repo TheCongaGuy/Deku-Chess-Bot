@@ -12,7 +12,7 @@ public:
 
 	// Makes a move on the chess board
 	// Takes the maximum ammount of time in minutes the AI is allowed to search
-	void MakeMove(int maxTime);
+	void MakeMove(float maxTime);
 
 private:
 	// ----- Data Members ----- \\
@@ -25,7 +25,7 @@ private:
 	int aiColor;
 
 	// Maximum ammount of time specified by the user for each move in milliseconds
-	int maxSearchTime;
+	float maxSearchTime;
 
 	// ----- Methods ----- \\
 
