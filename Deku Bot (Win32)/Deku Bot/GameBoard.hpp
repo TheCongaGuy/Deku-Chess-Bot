@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SFML/Graphics.hpp>
+#include <SFML/Graphics.hpp> // External Graphics Library
 #include <map>
 #include <vector>
 
@@ -11,7 +11,6 @@ typedef __int8 piece;
 typedef std::pair<unsigned int, unsigned int> coordinates;
 
 // Holds information about the current game state
-// Inherit from sf::Drawable to allow drawing to screen
 class GameBoard
 {
 public:
@@ -25,31 +24,30 @@ public:
 	// Copy Constructor
 	GameBoard(const GameBoard& rhs);
 
-	// Performs a move on the board
+	// Performs a move to the board
 	// Takes two coordinates; the location of the piece to be moved and a final position
 	// Returns true if move was made, false otherwise
 	bool MovePiece(const coordinates initial, const coordinates final);
 
 	// Ranks the board for a given color
-	// 1 -> White | -1 -> Black
-	// Returns an integer representing it's fitness
+	// Takes the color to favor: 1 -> White | -1 -> Black
+	// Returns an integer representing that color's fitness
 	int RankBoard(const int color) const;
 
 	// Finds all possible moves for a given color (1 for white, -1 for black)
-	// Returns a vector of pairs of coordinates (pair<int, int>)
+	// Returns a vector of moves (pairs of coordinates)
 	// pair.first -> initial position | pair.second -> final position
 	std::vector<std::pair<coordinates, coordinates>> FindMoves(int color) const;
 
-	// Checks if black is in check
+	// Returns true if black is in check
 	bool isBlackInCheck() const
 	{ return blackInCheck; }
 
-	// Checks if white is in check
+	// Returns true if white is in check
 	bool isWhiteInCheck() const
 	{ return whiteInCheck; }
 
-	// Returns who may move
-	// True -> White | False -> Black
+	// Returns true if it is white's turn
 	bool whosTurn() const
 	{ return whiteTurn; }
 
@@ -74,13 +72,16 @@ protected:
 	// Flags if a player is in check
 	bool blackInCheck, whiteInCheck;
 
+	// Flag if draw has been reached
+	bool draw;
+
 	// Flag controls which player may move
 	bool whiteTurn;
 
 	// Integer tracks how many moves have passed since a pawn move or capture.
 	int movesSinceCapture;
 
-	// Integers hold how many pieces each side has
+	// Integers hold how many pieces each color has
 	int blackPieces, whitePieces;
 
 	// Holds a copy of the previous board position
@@ -91,11 +92,13 @@ protected:
 	// Evaluates the current board and updates pieces / flags
 	void EvaluateBoard();
 
-	// Checks if a given pair of coordinates are within the bounds of the game board
+	// Checks if a pair of coordinates are within the bounds of a chess board
+	// Takes an x coordinate and a y coordinate
+	// Returns true if x, y pair reside inside the game board
 	bool InBounds(const unsigned int xCoord, const unsigned int yCoord) const
 	{ return xCoord < 8 && yCoord < 8; }
 
-	// KEY OF VALUES
+	/* ----- KEY OF VALUES ----- */
 	// + -> White
 	// - -> Black
 	// 
@@ -109,7 +112,7 @@ protected:
 	// 8. King
 	// 9. Castleable King
 
-	// Chess Special Rules
+	/* ----- Chess Special Rules ----- */
 	// Castling -				King moves two tiles towards rook if both have line of sight, and neither has moved.
 	//							Rook jumps over king to the first tile king moved over.
 	// 

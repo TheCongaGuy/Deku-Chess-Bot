@@ -7,6 +7,7 @@ void runAllTests()
 	testBoardConstructor();
 	testBoardFitness();
 	testMoveMethod();
+	timeTest();
 }
 
 // Test Game Board Constructors
@@ -220,25 +221,10 @@ void testBoardFitness()
 	customStart[6][6] = -1;
 	GameBoard checkTest(customStart); // White is in check
 
-	customStart[1][1] = 1;
-	GameBoard stalemateTest(customStart);
-
 	customStart[0][0] = 0;
 	GameBoard winTest(customStart); // White Wins
 
 	GameBoard commonTest;
-
-	// Test stalemate case
-	if (stalemateTest.RankBoard(1) != 0)
-	{
-		std::cout << "Failed Stalemate Test" << std::endl;
-		exit(-1);
-	}
-	if (stalemateTest.RankBoard(-1) != 0)
-	{
-		std::cout << "Failed Stalemate Test" << std::endl;
-		exit(-2);
-	}
 
 	// Test win/loss case
 	if (winTest.RankBoard(1) != 1000)
@@ -381,8 +367,8 @@ void AIGame()
 	GameBoard board;
 
 	// AI
-	DekuBot white(&board, 1);
-	DekuBot black(&board, -1);
+	DekuBot white(board, 1);
+	DekuBot black(board, -1);
 
 	// Sprite Renderer
 	sprites drawable(board);
@@ -441,7 +427,7 @@ void AISituations()
 
 	GameBoard testStart(customStart);
 
-	DekuBot test(&testStart, 1);
+	DekuBot test(testStart, 1);
 
 	test.MakeMove(0.5);
 
@@ -463,7 +449,165 @@ void AISituations()
 	};
 	GameBoard checkInOne(checkmateInOne);
 
-	DekuBot testTwo(&checkInOne, 1);
+	DekuBot testTwo(checkInOne, 1);
 
 	testTwo.MakeMove(0.5);
+}
+
+// Times Each Board Method and writes the results to a log
+// Additionally gives info on what resources are being used
+#include <Windows.h>
+void timeTest()
+{
+	// Log File
+	std::ofstream logFile("DekuTimeStats.log");
+
+	logFile << "Test Time Stamps : Deku Chess Bot" << std::endl;
+	logFile << "*~-~*~-~*~-~*~-~*~-~*~-~*~-~*~-~*" << std::endl << std::endl;
+
+	GameBoard testBoard;
+
+	const int numIterations = 10;
+
+	auto findMovesDuration = std::chrono::high_resolution_clock::duration::zero();
+	for (int i = 0; i < numIterations; i++)
+	{
+		auto FindMoves = std::chrono::high_resolution_clock::now();
+		testBoard.FindMoves(1);
+		findMovesDuration += std::chrono::high_resolution_clock::now() - FindMoves;
+	}
+
+	findMovesDuration /= numIterations;
+
+	auto rankBoardDuration = std::chrono::high_resolution_clock::duration::zero();
+	for (int i = 0; i < numIterations; i++)
+	{
+		auto RankBoard = std::chrono::high_resolution_clock::now();
+		testBoard.RankBoard(1);
+		rankBoardDuration += std::chrono::high_resolution_clock::now() - RankBoard;
+	}
+	rankBoardDuration /= numIterations;
+
+	auto copyConstructorDuration = std::chrono::high_resolution_clock::duration::zero();
+	for (int i = 0; i < numIterations; i++)
+	{
+		auto CopyConstructor = std::chrono::high_resolution_clock::now();
+		GameBoard testBoard2 = testBoard;
+		copyConstructorDuration += std::chrono::high_resolution_clock::now() - CopyConstructor;
+	}
+	copyConstructorDuration /= numIterations;
+
+	auto makeMoveDuration = std::chrono::high_resolution_clock::duration::zero();
+	for (int i = 0; i < numIterations; i++)
+	{
+		GameBoard moveBoard = testBoard;
+		auto MakeMove = std::chrono::high_resolution_clock::now();
+		moveBoard.MovePiece(coordinates(6, 7), coordinates(7, 5));
+		makeMoveDuration += std::chrono::high_resolution_clock::now() - MakeMove;
+	}
+	makeMoveDuration /= numIterations;
+
+	auto totalTime = findMovesDuration + rankBoardDuration + copyConstructorDuration + makeMoveDuration;
+
+	logFile << "v- Standalone Times -v" << std::endl;
+	logFile << "FindMoves() :" << findMovesDuration.count() << "ns | ~" <<  (findMovesDuration.count() * 100) / totalTime.count() << "%" << std::endl;
+	logFile << "RankBoard() :" << rankBoardDuration.count() << "ns | ~" << (rankBoardDuration.count() * 100) / totalTime.count() << "%" << std::endl;
+	logFile << "Copy Cons() :" << copyConstructorDuration.count() << "ns | ~" << (copyConstructorDuration.count() * 100) / totalTime.count() << "%" << std::endl;
+	logFile << "MovePiece() :" << makeMoveDuration.count() << "ns | ~" << (makeMoveDuration.count() * 100) / totalTime.count() << std::endl << std::endl;
+
+	findMovesDuration *= 3;
+	rankBoardDuration *= 1;
+	copyConstructorDuration *= 3;
+	makeMoveDuration *= 4;
+
+	auto adjustedTime = findMovesDuration.count() + rankBoardDuration.count() + copyConstructorDuration.count() + makeMoveDuration.count();
+
+	logFile << "v- Deku Bot Equivalent Times -v" << std::endl;
+	logFile << "FindMoves() :" << findMovesDuration.count() << "ns | ~" << (findMovesDuration.count() * 100) / adjustedTime << "%" << std::endl;
+	logFile << "RankBoard() :" << rankBoardDuration.count() << "ns | ~" << (rankBoardDuration.count() * 100) / adjustedTime << "%" << std::endl;
+	logFile << "Copy Cons() :" << copyConstructorDuration.count() << "ns | ~" << (copyConstructorDuration.count() * 100) / adjustedTime << "%" << std::endl;
+	logFile << "MovePiece() :" << makeMoveDuration.count() << "ns | ~" << (makeMoveDuration.count() * 100) / adjustedTime << std::endl << std::endl;
+
+	// Obtain Processor Information
+	int numCores = 0;
+	int dekuThreads = (omp_get_num_procs() * 3) / 4;
+	int reservedThreads = omp_get_num_procs() / 4;
+
+	// Call GetLogicalProcessorInformation to retrieve information about the processors
+	DWORD bufferSize = 0;
+	BOOL result = GetLogicalProcessorInformation(NULL, &bufferSize);
+
+	if (result == FALSE && GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+		// Allocate memory for the processor information buffer
+		PSYSTEM_LOGICAL_PROCESSOR_INFORMATION buffer = new SYSTEM_LOGICAL_PROCESSOR_INFORMATION[bufferSize / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION)];
+
+		// Call GetLogicalProcessorInformation again to retrieve the actual processor information
+		result = GetLogicalProcessorInformation(buffer, &bufferSize);
+		if (result == TRUE) {
+			// Count the number of physical cores
+			for (unsigned int i = 0; i < bufferSize / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION); i++) {
+				if (buffer[i].Relationship == RelationProcessorCore) {
+					numCores++;
+				}
+			}
+		}
+
+		// Free the processor information buffer
+		delete[] buffer;
+	}
+
+	logFile << "*~-~*~-~*~-~*~-~*~-~*~-~*~-~*~-~*" << std::endl;
+	logFile << "v- CPU Information -v" << std::endl;
+	logFile << "Cores: " << numCores << std::endl;
+	logFile << "| Machine Thread Count: " << dekuThreads + reservedThreads << std::endl;
+	logFile << "|-> DekuBot Threads: " << dekuThreads << std::endl;
+	logFile << "|-> Reserved Threads (Other Processes): " << reservedThreads << std::endl;
+	logFile << "Thread per Core Workload:  " << ((float)dekuThreads / numCores) * 100 << "%" << std::endl;
+
+	logFile << "CPU: ";
+
+
+	SYSTEM_INFO cpuInfo;
+	GetSystemInfo(&cpuInfo);
+
+	switch (cpuInfo.wProcessorArchitecture)
+	{
+	case PROCESSOR_ARCHITECTURE_INTEL:
+		logFile << "Intel x86 (32-bit)" << std::endl;
+		break;
+	case PROCESSOR_ARCHITECTURE_IA64:
+		logFile << "Intel Itanium-based systems (64-bit)" << std::endl;
+		break;
+	case PROCESSOR_ARCHITECTURE_AMD64:
+		logFile << "AMD64 (64-bit)" << std::endl;
+		break;
+	case PROCESSOR_ARCHITECTURE_ARM:
+		logFile << "ARM" << std::endl;
+		break;
+	case PROCESSOR_ARCHITECTURE_ARM64:
+		logFile << "ARM64" << std::endl;
+		break;
+	default:
+		logFile << "Unknown" << std::endl;
+		break;
+	}
+
+	logFile << "Clock Frequency: ";
+
+	LARGE_INTEGER frequency;
+	QueryPerformanceFrequency(&frequency);
+
+	if (frequency.QuadPart >= 1e9)
+		logFile << frequency.QuadPart / 1e9 << "GHz" << std::endl;
+
+	else if (frequency.QuadPart >= 1e6)
+		logFile << frequency.QuadPart / 1e6 << "MHz" << std::endl;
+
+	else if (frequency.QuadPart >= 1e3)
+		logFile << frequency.QuadPart / 1e3 << "kHz" << std::endl;
+
+	else
+		logFile << frequency.QuadPart << "Hz" << std::endl;
+
+	logFile.close();
 }

@@ -1,16 +1,11 @@
 #include "GameBoard.hpp"
 
 // Default Constructor
-GameBoard::GameBoard()
+GameBoard::GameBoard() : movesSinceCapture(0), blackInCheck(false), whiteInCheck(false), draw(false), whiteTurn(true),
+						 blackPieces(16), whitePieces(16)
 {
-	// Set flags
-	movesSinceCapture = 0;
-	blackInCheck = whiteInCheck = false;
-	whiteTurn = true;
-	blackPieces = whitePieces = 16;
-
 	// Configuration of back ranks
-	piece backRanks[8] = { 4, 5, 6, 7, 9, 6, 5, 4 };
+	const piece backRanks[8] = { 4, 5, 6, 7, 9, 6, 5, 4 };
 
 	for (int x = 0; x < 8; x++)
 	{
@@ -23,55 +18,33 @@ GameBoard::GameBoard()
 		gameBoard[x][7] = backRanks[x];
 
 		// Set the previous position to all 0 tiles
-		for (int y = 0; y < 8; y++)
-			previousPosition[x][y] = 0;
+		std::memset(previousPosition, 0, sizeof(previousPosition));
 	}
 }
 
 // Explicit Constructor
 // Takes a reference to a pre-made game board
-GameBoard::GameBoard(const piece(&gameState)[8][8])
+GameBoard::GameBoard(const piece(&gameState)[8][8]) : movesSinceCapture(0), whiteTurn(true), draw(false)
 {
 	// Copy the piece positions to this objects game board
-	for (int x = 0; x < 8; x++)
-		for (int y = 0; y < 8; y++)
-		{
-			gameBoard[x][y] = gameState[x][y];
+	std::copy(&gameState[0][0], &gameState[0][0] + 64, &gameBoard[0][0]);
 
-			// Set the previous position to all 0 tiles
-			previousPosition[x][y] = 0;
-		}
+	// Set the previous position to all 0 tiles
+	std::memset(previousPosition, 0, sizeof(previousPosition));
 
-	// Evaluate the game board position
 	EvaluateBoard();
-
-	// Assume a capture was just made
-	movesSinceCapture = 0;
-
-	// Assume that it is white's turn
-	whiteTurn = true;
 }
 
 // Copy Constructor
-GameBoard::GameBoard(const GameBoard& rhs)
+GameBoard::GameBoard(const GameBoard& rhs) : movesSinceCapture(rhs.movesSinceCapture), blackInCheck(rhs.blackInCheck),
+											 whiteInCheck(rhs.whiteInCheck), draw(rhs.draw), whiteTurn(rhs.whiteTurn),
+											 blackPieces(rhs.blackPieces), whitePieces(rhs.whitePieces)
 {
-	// Copy flags
-	movesSinceCapture = rhs.movesSinceCapture;
-	blackInCheck = rhs.blackInCheck;
-	whiteInCheck = rhs.whiteInCheck;
-	whiteTurn = rhs.whiteTurn;
-	blackPieces = rhs.blackPieces;
-	whitePieces = rhs.whitePieces;
-
 	// Copy the board of the other object
-	for (int x = 0; x < 8; x++)
-		for (int y = 0; y < 8; y++)
-		{
-			gameBoard[x][y] = rhs.gameBoard[x][y];
+	std::memcpy(gameBoard, rhs.gameBoard, sizeof(gameBoard));
 
-			// Copy the previous position of the rhs
-			previousPosition[x][y] = rhs.previousPosition[x][y];
-		}
+	// Copy the previous position of the other object
+	std::memcpy(previousPosition, rhs.previousPosition, sizeof(previousPosition));
 }
 
 // Performs a move on the board
@@ -79,37 +52,19 @@ GameBoard::GameBoard(const GameBoard& rhs)
 // Returns true if move was made, false otherwise
 bool GameBoard::MovePiece(const coordinates initial, const coordinates final)
 {
-	// Flag holds move validity
-	bool validMove = false;
-
 	// Calculate all legal moves for the current color's turn
-	std::vector<std::pair<coordinates, coordinates>> legalMoves;
-
-	if (whiteTurn)
-		legalMoves = FindMoves(1);
-	else
-		legalMoves = FindMoves(-1);
+	std::vector<std::pair<coordinates, coordinates>> legalMoves = whiteTurn ? FindMoves(1) : FindMoves(-1);
 
 	// Check to see if the given move exists in the vector of legal moves
-	for (auto& move : legalMoves)
-	{
-		if (move.first != initial)
-			continue;
+	auto move = std::find_if (legalMoves.begin(), legalMoves.end(), [&](const auto& move) 
+		{ return move.first == initial && move.second == final; }
+	);
 
-		if (move.second != final)
-			continue;
-
-		validMove = true;
-		break;
-	}
-
-	// If the move exists, preform the move
-	if (validMove)
+	// If the move exists, perform the move
+	if (move != legalMoves.end())
 	{
 		// Update the previous position
-		for (int x = 0; x < 8; x++)
-			for (int y = 0; y < 8; y++)
-				previousPosition[x][y] = gameBoard[x][y];
+		std::memcpy(previousPosition, gameBoard, sizeof(gameBoard));
 
 		int oldX = initial.first;
 		int oldY = initial.second;
@@ -124,10 +79,11 @@ bool GameBoard::MovePiece(const coordinates initial, const coordinates final)
 
 		// Swap Turns
 		whiteTurn = !whiteTurn;
+
+		return true;
 	}
 
-	// Return the validity of the move
-	return validMove;
+	return false;
 }
 
 // Ranks the board for a given color
@@ -142,111 +98,62 @@ int GameBoard::RankBoard(const int color) const
 	bool blackKing = false, whiteKing = false;
 
 	// First check for draws
-	if (blackInCheck && whiteInCheck)
+	if (draw)
 			return 0;
 
 	// Check each grid space
 	for (int x = 0; x < 8; x++)
 		for (int y = 0; y < 8; y++)
 		{
-			if (gameBoard[x][y] * color > 0 && previousPosition[x][y] * color < 0)
+			// Save the value of the piece
+			int pieceValue = gameBoard[x][y] * color;
+
+			// Add a bonus if a piece was captured
+			if (pieceValue > 0 && previousPosition[x][y] * color < 0)
 				fitness += abs(previousPosition[x][y]);
-			if (gameBoard[x][y] * color < 0 && previousPosition[x][y] * color > 0)
+			if (pieceValue < 0 && previousPosition[x][y] * color > 0)
 				fitness -= abs(previousPosition[x][y]);
 
-			switch (abs(gameBoard[x][y]))
+			switch (abs(pieceValue))
 			{
 				// Pawns
 				case 1:
 				case 2:
-					if (gameBoard[x][y] * color > 0)
-						fitness += 2;
-					else
-						fitness -= 2;
+				{
+					// Record the direction of movement for the pawn
+					const int pawnDir = (gameBoard[x][y] > 0) ? -1 : 1;
 
-					// For black pawns
-					if (gameBoard[x][y] < 0)
-					{
-						// Check diagonals
-						if (InBounds(x + 1, y + 1))
-						{
-							if (gameBoard[x][y] * color > 0)
-							{
-								fitness++;
-							}
-							else
-							{
-								fitness--;
-							}
-						}
+					// Add the pawn's value to fitness
+					fitness += ((pieceValue > 0) ? 2 : -2);
 
-						if (InBounds(x - 1, y + 1))
+					// Check diagonals
+					for (int dx : {-1, 1})
+						if (InBounds(x + dx, y + pawnDir))
 						{
-							if (gameBoard[x][y] * color > 0)
-							{
+							if (pieceValue > 0)
 								fitness++;
-							}
 							else
-							{
 								fitness--;
-							}
 						}
-					}
-
-					// For white pawns
-					if (gameBoard[x][y] > 0)
-					{
-						// Check diagonals
-						if (InBounds(x + 1, y - 1))
-						{
-							if (gameBoard[x][y] * color > 0)
-							{
-								fitness++;
-							}
-							else
-							{
-								fitness--;
-							}
-						}
-
-						if (InBounds(x - 1, y - 1))
-						{
-							if (gameBoard[x][y] * color > 0)
-							{
-								fitness++;
-							}
-							else
-							{
-								fitness--;
-							}
-						}
-					}
 					break;
+				}
 
 				// Rooks
 				case 4:
 				case 3:
-					if (gameBoard[x][y] * color > 0)
-						fitness += 14;
-					else
-						fitness -= 14;
-					// Check all four directions
+				{
+					const int increment = (pieceValue > 0) ? 1 : -1;
+					fitness += increment * 14;
+
 					for (int i = 0; i < 4; i++)
 					{
-						int directionX[4] = { 0, 1, 0, -1 };
-						int directionY[4] = { 1, 0, -1, 0 };
+						const int directionX[4] = { 0, 1, 0, -1 };
+						const int directionY[4] = { 1, 0, -1, 0 };
 						int newX = x + directionX[i];
 						int newY = y + directionY[i];
 						while (InBounds(newX, newY))
 						{
-							if (gameBoard[x][y] * color > 0)
-							{
-								fitness++;
-							}
-							else
-							{
-								fitness--;
-							}
+							fitness += increment;
 
 							if (gameBoard[newX][newY] != 0)
 								break;
@@ -256,62 +163,45 @@ int GameBoard::RankBoard(const int color) const
 						}
 					}
 					break;
+				}
 
 				// Knights
 				case 5:
+				{
+					const int increment = (pieceValue > 0) ? 1 : -1;
+					fitness += increment * 8;
 
-					if (gameBoard[x][y] * color > 0)
-						fitness += 8;
-					else
-						fitness -= 8;
-
-					for (int areaX = -2; areaX <= 2; areaX++)
-						for (int areaY = -2; areaY <= 2; areaY++)
+					for (int areaX : {-2, -1, 1, 2})
+						for (int areaY : {-2, -1, 1, 2})
 						{
-							int distance = abs(areaX) + abs(areaY);
-							if (distance == 3)
+							if (abs(areaX) != abs(areaY))
 							{
-								int newX = x + areaX;
-								int newY = y + areaY;
+								const int newX = x + areaX;
+								const int newY = y + areaY;
 								if (InBounds(newX, newY))
 								{
-									if (gameBoard[x][y] * color > 0)
-									{
-										fitness++;
-									}
-									else
-									{
-										fitness--;
-									}
+									fitness += increment;
 								}
 							}
 						}
 					break;
+				}
 
 				// Bishops
 				case 6:
-					if (gameBoard[x][y] * color > 0)
-						fitness += 13;
-					else
-						fitness -= 13;
+				{
+					const int increment = (pieceValue > 0) ? 1 : -1;
+					fitness += increment * 13;
 
-					// Check all four directions
+					const int directionX[4] = { 1, 1, -1, -1 };
+					const int directionY[4] = { 1, -1, 1, -1 };
 					for (int i = 0; i < 4; i++)
 					{
-						int directionX[4] = { 1, 1, -1, -1 };
-						int directionY[4] = { 1, -1, 1, -1 };
 						int newX = x + directionX[i];
 						int newY = y + directionY[i];
 						while (InBounds(newX, newY))
 						{
-							if (gameBoard[x][y] * color > 0)
-							{
-								fitness++;
-							}
-							else
-							{
-								fitness--;
-							}
+							fitness += increment;
 
 							if (gameBoard[newX][newY] != 0)
 								break;
@@ -321,31 +211,24 @@ int GameBoard::RankBoard(const int color) const
 						}
 					}
 					break;
+				}
 
 				// Queens
 				case 7:
-					if (gameBoard[x][y] * color > 0)
-						fitness += 27;
-					else
-						fitness -= 27;
+				{
+					const int increment = (pieceValue > 0) ? 1 : -1;
+					fitness += increment * 27;
 
+					const int directionX[8] = { 0, 1, 0, -1, 1, 1, -1, -1 };
+					const int directionY[8] = { 1, 0, -1, 0, 1, -1, 1, -1 };
 					// Check all eight directions
 					for (int i = 0; i < 8; i++)
 					{
-						int directionX[8] = { 0, 1, 0, -1, 1, 1, -1, -1 };
-						int directionY[8] = { 1, 0, -1, 0, 1, -1, 1, -1 };
 						int newX = x + directionX[i];
 						int newY = y + directionY[i];
 						while (InBounds(newX, newY))
 						{
-							if (gameBoard[x][y] * color > 0)
-							{
-								fitness++;
-							}
-							else
-							{
-								fitness--;
-							}
+							fitness += increment;
 
 							if (gameBoard[newX][newY] != 0)
 								break;
@@ -355,11 +238,11 @@ int GameBoard::RankBoard(const int color) const
 						}
 					}
 					break;
+				}
 
 				// Kings
 				case 9:
 				case 8:
-
 					// Flag kings existance
 					if (!whiteKing && gameBoard[x][y] > 0)
 						whiteKing = true;
@@ -370,18 +253,21 @@ int GameBoard::RankBoard(const int color) const
 		}
 
 
-	// Check that kings exist
-	if (color == 1 && !blackKing)
-		return 1000;
-	if (color == 1 && !whiteKing)
-		return -1000;
+	if (color == 1) 
+	{
+		if (!blackKing)
+			return 1000;
+		if (!whiteKing)
+			return -1000;
+	}
+	else 
+	{
+		if (!whiteKing)
+			return 1000;
+		if (!blackKing)
+			return -1000;
+	}
 
-	if (color == -1 && !whiteKing)
-		return 1000;
-	if (color == -1 && !blackKing)
-		return -1000;
-
-	// If kings exist, return the calculated fitness
 	return fitness;
 }
 
@@ -401,80 +287,87 @@ void GameBoard::EvaluateBoard()
 	// Check state of the board
 	for (int x = 0; x < 8; x++)
 	{
-		// Check Past En Passant Opportunities
-		if (gameBoard[x][3] == -2)
-		{
-			if (gameBoard[x][2] == 1)
-				gameBoard[x][3] = 0;
-			else
-				gameBoard[x][3] = -1;
-		}
+		// Quick reference variables
+		piece& pawnSecondRow = gameBoard[x][2];
+		piece& pawnThirdRow = gameBoard[x][3];
+		piece& pawnFourthRow = gameBoard[x][4];
+		piece& pawnFifthRow = gameBoard[x][5];
 
-		if (gameBoard[x][4] == 2)
+		piece& pawnTopRow = gameBoard[x][0];
+		piece& pawnBottomRow = gameBoard[x][7];
+
+		// Check Past En Passant Opportunities
+		if (pawnThirdRow == -2)
 		{
-			if (gameBoard[x][5] == -1)
-				gameBoard[x][4] = 0;
+			if (pawnSecondRow == 1)
+				pawnThirdRow = 0;
 			else
-				gameBoard[x][4] = 1;
+				pawnThirdRow = -1;
+		}
+		else if (pawnFourthRow == 2)
+		{
+			if (pawnFifthRow == -1)
+				pawnFourthRow = 0;
+			else
+				pawnFourthRow = 1;
 		}
 
 		// Check New En Passant Opportunities
-		if (gameBoard[x][4] == 1)
-			if (previousPosition[x][6] == 1)
+		if (pawnFourthRow == 1 && previousPosition[x][6] == 1)
 			{
-				gameBoard[x][4] = 2;
+				pawnFourthRow = 2;
 				pawnMove = true;
 			}
-
-		if (gameBoard[x][3] == -1)
-			if (previousPosition[x][1] == -1)
+		else if (pawnThirdRow == -1 && previousPosition[x][1] == -1)
 			{
-				gameBoard[x][3] = -2;
+				pawnThirdRow = -2;
 				pawnMove = true;
 			}
 
 		// Check Promotions
-		if (gameBoard[x][7] == -1)
+		if (pawnBottomRow == -1)
 		{
-			gameBoard[x][7] = -7;
+			pawnBottomRow = -7;
+			pawnMove = true;
+		}
+		else if (pawnTopRow == 1)
+		{
+			pawnTopRow = 7;
 			pawnMove = true;
 		}
 
-		if (gameBoard[x][0] == 1)
-		{
-			gameBoard[x][1] = 7;
-			pawnMove = true;
-		}
-
+		// Check the rest of the gameboard
 		for (int y = 0; y < 8; y++)
 		{
+			piece& currentPiece = gameBoard[x][y];
+			piece& previousPiece = previousPosition[x][y];
 			// Count black pieces
-			if (gameBoard[x][y] < 0)
+			if (currentPiece < 0)
 				currentBlackPieces++;
 
 			// Count white pieces
-			if (gameBoard[x][y] > 0)
+			else if (currentPiece > 0)
 				currentWhitePieces++;
 
 			// Check pawn movement
-			if (gameBoard[x][y] == 1 && previousPosition[x][y] == 0)
+			if (currentPiece == 1 && previousPiece == 0)
 				pawnMove = true;
 
-			if (gameBoard[x][y] == -1 && previousPosition[x][y] == 0)
+			else if (currentPiece == -1 && previousPiece == 0)
 				pawnMove = true;
 
 			// Check Castle Rooks
 			if (x % 7 != 0 || y % 7 != 0)
 			{
-				if (gameBoard[x][y] == 4)
-					gameBoard[x][y] = 3;
+				if (currentPiece == 4)
+					currentPiece = 3;
 
-				if (gameBoard[x][y] == -4)
-					gameBoard[x][y] = -3;
+				else if (currentPiece == -4)
+					currentPiece = -3;
 			}
 
 			// Check Kings
-			if (gameBoard[x][y] == 8 || gameBoard[x][y] == 9)
+			if (currentPiece == 8 || currentPiece == 9)
 			{
 				// Record king location
 				whiteKingX = x;
@@ -486,18 +379,18 @@ void GameBoard::EvaluateBoard()
 					gameBoard[0][7] = 0;
 					gameBoard[3][7] = 3;
 				}
-				if (gameBoard[6][7] == 9)
+				else if (gameBoard[6][7] == 9)
 				{
 					gameBoard[7][7] = 0;
 					gameBoard[5][7] = 3;
 				}
 
 				// Check if king moved from start
-				if (gameBoard[x][y] == 9 && (x != 4 || y != 7))
-					gameBoard[x][y] = 8;
+				if (currentPiece == 9 && (x != 4 || y != 7))
+					currentPiece = 8;
 			}
 
-			if (gameBoard[x][y] == -8 || gameBoard[x][y] == -9)
+			else if (currentPiece == -8 || currentPiece == -9)
 			{
 				// Record king location
 				blackKingX = x;
@@ -509,24 +402,24 @@ void GameBoard::EvaluateBoard()
 					gameBoard[0][0] = 0;
 					gameBoard[3][0] = -3;
 				}
-				if (gameBoard[6][0] == -9)
+				else if (gameBoard[6][0] == -9)
 				{
 					gameBoard[7][0] = 0;
 					gameBoard[5][0] = -3;
 				}
 
 				// Check if king moved from start
-				if (gameBoard[x][y] == -9 && (x != 4 || y != 0))
-					gameBoard[x][y] = -8;
+				if (currentPiece == -9 && (x != 4 || y != 0))
+					currentPiece = -8;
 			}
 		}
 	}
 
 	// Update flags
-	if (pawnMove || blackPieces > currentBlackPieces || whitePieces > currentWhitePieces)
-		movesSinceCapture = 0;
-	else
+	if (!pawnMove && blackPieces == currentBlackPieces && whitePieces == currentWhitePieces)
 		movesSinceCapture++;
+	else
+		movesSinceCapture = 0;
 
 	blackPieces = currentBlackPieces;
 	whitePieces = currentWhitePieces;
@@ -534,7 +427,7 @@ void GameBoard::EvaluateBoard()
 	// Check for draws
 	if (movesSinceCapture == 100)
 	{
-		blackInCheck = whiteInCheck = true;
+		draw = true;
 		return;
 	}
 
@@ -543,15 +436,17 @@ void GameBoard::EvaluateBoard()
 		return;
 
 	// Check for pawn checks
-	if (gameBoard[blackKingX + 1][blackKingY + 1] == 1 || gameBoard[blackKingX + 1][blackKingY + 1] == 2)
-		blackInCheck = true;
-	if (gameBoard[blackKingX - 1][blackKingY + 1] == 1 || gameBoard[blackKingX - 1][blackKingY + 1] == 2)
-		blackInCheck = true;
+	for (int offset : {1, -1})
+	{
+		piece& targetSquareBlack = gameBoard[blackKingX + offset][blackKingY + 1];
+		piece& targetSquareWhite = gameBoard[whiteKingX + offset][whiteKingY - 1];
 
-	if (gameBoard[whiteKingX + 1][whiteKingY - 1] == -1 || gameBoard[whiteKingX + 1][whiteKingY - 1] == -2)
-		whiteInCheck = true;
-	if (gameBoard[whiteKingX - 1][whiteKingY - 1] == -1 || gameBoard[whiteKingX - 1][whiteKingY - 1] == -2)
-		whiteInCheck = true;
+		if (targetSquareBlack == 1 || targetSquareBlack == 2)
+			blackInCheck = true;
+
+		else if (targetSquareWhite == -1 || targetSquareWhite == -2)
+			whiteInCheck = true;
+	}
 
 	// Check for knight checks
 	for (int areaX = -2; areaX <= 2; areaX++)
@@ -588,12 +483,13 @@ void GameBoard::EvaluateBoard()
 		int newY = blackKingY + directionY[i];
 		while (InBounds(newX, newY))
 		{
+			piece& targetSquare = gameBoard[newX][newY];
 			// Friendly piece blocks path
-			if (gameBoard[newX][newY] < 0)
+			if (targetSquare < 0)
 				break;
 
 			// Bishop or Queen creates check
-			if (gameBoard[newX][newY] == 6 || gameBoard[newX][newY] == 7)
+			if (targetSquare == 6 || targetSquare == 7)
 				blackInCheck = true;
 
 			newX += directionX[i];
@@ -609,12 +505,14 @@ void GameBoard::EvaluateBoard()
 		int newY = whiteKingY + directionY[i];
 		while (InBounds(newX, newY))
 		{
+			piece& targetSquare = gameBoard[newX][newY];
+
 			// Friendly piece blocks path
-			if (gameBoard[newX][newY] > 0)
+			if (targetSquare > 0)
 				break;
 
 			// Bishop or Queen creates check
-			if (gameBoard[newX][newY] == -6 || gameBoard[newX][newY] == -7)
+			if (targetSquare == -6 || targetSquare == -7)
 				whiteInCheck = true;
 
 			newX += directionX[i];
@@ -631,12 +529,13 @@ void GameBoard::EvaluateBoard()
 		int newY = blackKingY + directionY[i];
 		while (InBounds(newX, newY))
 		{
+			piece& targetSquare = gameBoard[newX][newY];
 			// Friendly piece blocks path
-			if (gameBoard[newX][newY] < 0)
+			if (targetSquare < 0)
 				break;
 
 			// Rook or Queen creates check
-			if (gameBoard[newX][newY] == 3 || gameBoard[newX][newY] == 4 || gameBoard[newX][newY] == 7)
+			if (targetSquare == 3 || targetSquare == 4 || targetSquare == 7)
 				blackInCheck = true;
 
 			newX += directionX[i];
@@ -652,12 +551,13 @@ void GameBoard::EvaluateBoard()
 		int newY = whiteKingY + directionY[i];
 		while (InBounds(newX, newY))
 		{
+			piece& targetSquare = gameBoard[newX][newY];
 			// Friendly piece blocks path
-			if (gameBoard[newX][newY] > 0)
+			if (targetSquare > 0)
 				break;
 
 			// Rook or Queen creates check
-			if (gameBoard[newX][newY] == -3 || gameBoard[newX][newY] == -4 || gameBoard[newX][newY] == -7)
+			if (targetSquare == -3 || targetSquare == -4 || targetSquare == -7)
 				whiteInCheck = true;
 
 			newX += directionX[i];
@@ -673,6 +573,7 @@ std::vector<std::pair<coordinates, coordinates>> GameBoard::FindMoves(int color)
 {
 	// Vector of possible moves
 	std::vector<std::pair<coordinates, coordinates>> possibleMoves;
+	possibleMoves.reserve(137);
 
 	// Flags for castling
 	bool castleLong = true, castleShort = true;
@@ -684,109 +585,67 @@ std::vector<std::pair<coordinates, coordinates>> GameBoard::FindMoves(int color)
 			{
 				// Pawns
 				case 1:
-					// For black pawns
-					if (color == -1)
+					switch (color) 
 					{
+						case -1: // For black pawns
 						// Check for En Passant
 						if (y == 1 && gameBoard[x][2] == 0 && gameBoard[x][3] == 0)
-						{
-							coordinates initial(x, y);
-							coordinates final(x, 3);
-							std::pair<coordinates, coordinates> move(initial, final);
-							possibleMoves.emplace_back(move);
-						}
-					}
+							possibleMoves.emplace_back(std::piecewise_construct, std::forward_as_tuple(x, y), std::forward_as_tuple(x, 3));
+						break;
 
-					// For white pawns
-					if (color == 1)
-					{
-						// Check for En Passant
-						if (y == 6 && gameBoard[x][5] == 0 && gameBoard[x][4] == 0)
-						{
-							coordinates initial(x, y);
-							coordinates final(x, 4);
-							std::pair<coordinates, coordinates> move(initial, final);
-							possibleMoves.emplace_back(move);
-						}
+						case 1: // For white pawns
+							// Check for En Passant
+							if (y == 6 && gameBoard[x][5] == 0 && gameBoard[x][4] == 0)
+								possibleMoves.emplace_back(std::piecewise_construct, std::forward_as_tuple(x, y), std::forward_as_tuple(x, 4));
+							break;
 					}
 				case 2:
-					// For black pawns
-					if (color == -1)
+					switch (color)
 					{
-						// Check space infront
-						if (InBounds(x, y + 1) && gameBoard[x][y + 1] == 0)
-						{
-							coordinates initial(x, y);
-							coordinates final(x, y + 1);
-							std::pair<coordinates, coordinates> move(initial, final);
-							possibleMoves.emplace_back(move);
-						}
+						// black pawns
+						case -1:
+							// Check space infront
+							if (InBounds(x, y + 1) && gameBoard[x][y + 1] == 0)
+								possibleMoves.emplace_back(std::piecewise_construct, std::forward_as_tuple(x, y), std::forward_as_tuple(x, y + 1));
 
-						// Check diagonals
-						if (InBounds(x + 1, y + 1) && (gameBoard[x + 1][y + 1] > 0 || gameBoard[x + 1][y] == 2))
-						{
-							coordinates initial(x, y);
-							coordinates final(x + 1, y + 1);
-							std::pair<coordinates, coordinates> move(initial, final);
-							possibleMoves.emplace_back(move);
-						}
+							// Check diagonals
+							if (InBounds(x + 1, y + 1) && (gameBoard[x + 1][y + 1] > 0 || gameBoard[x + 1][y] == 2))
+								possibleMoves.emplace_back(std::piecewise_construct, std::forward_as_tuple(x, y), std::forward_as_tuple(x + 1, y + 1));
 
-						if (InBounds(x - 1, y + 1) && (gameBoard[x - 1][y + 1] > 0 || gameBoard[x - 1][y] == 2))
-						{
-							coordinates initial(x, y);
-							coordinates final(x - 1, y + 1);
-							std::pair<coordinates, coordinates> move(initial, final);
-							possibleMoves.emplace_back(move);
-						}
-					}
+							if (InBounds(x - 1, y + 1) && (gameBoard[x - 1][y + 1] > 0 || gameBoard[x - 1][y] == 2))
+								possibleMoves.emplace_back(std::piecewise_construct, std::forward_as_tuple(x, y), std::forward_as_tuple(x - 1, y + 1));
+						break;
 
-					// For white pawns
-					if (color == 1)
-					{
-						// Check space infront
-						if (InBounds(x, y - 1) && gameBoard[x][y - 1] == 0)
-						{
-							coordinates initial(x, y);
-							coordinates final(x, y - 1);
-							std::pair<coordinates, coordinates> move(initial, final);
-							possibleMoves.emplace_back(move);
-						}
+						// white pawns
+						case 1:
+							// Check space infront
+							if (InBounds(x, y - 1) && gameBoard[x][y - 1] == 0)
+								possibleMoves.emplace_back(std::piecewise_construct, std::forward_as_tuple(x, y), std::forward_as_tuple(x, y - 1));
 
-						// Check diagonals
-						if (InBounds(x + 1, y - 1) && (gameBoard[x + 1][y - 1] < 0 || gameBoard[x + 1][y] == -2))
-						{
-							coordinates initial(x, y);
-							coordinates final(x + 1, y - 1);
-							std::pair<coordinates, coordinates> move(initial, final);
-							possibleMoves.emplace_back(move);
-						}
+							// Check diagonals
+							if (InBounds(x + 1, y - 1) && (gameBoard[x + 1][y - 1] < 0 || gameBoard[x + 1][y] == -2))
+								possibleMoves.emplace_back(std::piecewise_construct, std::forward_as_tuple(x, y), std::forward_as_tuple(x + 1, y - 1));
 
-						if (InBounds(x - 1, y - 1) && (gameBoard[x - 1][y - 1] < 0 || gameBoard[x - 1][y] == -2))
-						{
-							coordinates initial(x, y);
-							coordinates final(x - 1, y - 1);
-							std::pair<coordinates, coordinates> move(initial, final);
-							possibleMoves.emplace_back(move);
-						}
+							if (InBounds(x - 1, y - 1) && (gameBoard[x - 1][y - 1] < 0 || gameBoard[x - 1][y] == -2))
+								possibleMoves.emplace_back(std::piecewise_construct, std::forward_as_tuple(x, y), std::forward_as_tuple(x - 1, y - 1));
+						break;
 					}
 					break;
 
 				// Rooks
 				case 3:
 				case 4:
+				{
 					// Check all four directions
+					int directionX[4] = { 0, 1, 0, -1 };
+					int directionY[4] = { 1, 0, -1, 0 };
 					for (int i = 0; i < 4; i++)
 					{
-						int directionX[4] = { 0, 1, 0, -1 };
-						int directionY[4] = { 1, 0, -1, 0 };
 						int newX = x + directionX[i];
 						int newY = y + directionY[i];
 						while (InBounds(newX, newY) && gameBoard[newX][newY] * color <= 0)
 						{
-							coordinates initial(x, y);
-							coordinates final(newX, newY);
-							std::pair<coordinates, coordinates> move(initial, final);
-							possibleMoves.emplace_back(move);
+							possibleMoves.emplace_back(std::piecewise_construct, std::forward_as_tuple(x, y), std::forward_as_tuple(newX, newY));
 
 							if (gameBoard[newX][newY] * color < 0)
 								break;
@@ -796,6 +655,7 @@ std::vector<std::pair<coordinates, coordinates>> GameBoard::FindMoves(int color)
 						}
 					}
 					break;
+				}
 
 				// Knights
 				case 5:
@@ -808,31 +668,24 @@ std::vector<std::pair<coordinates, coordinates>> GameBoard::FindMoves(int color)
 								int newX = x + areaX;
 								int newY = y + areaY;
 								if (InBounds(newX, newY) && gameBoard[newX][newY] * color <= 0)
-								{
-									coordinates initial(x, y);
-									coordinates final(newX, newY);
-									std::pair<coordinates, coordinates> move(initial, final);
-									possibleMoves.emplace_back(move);
-								}
+									possibleMoves.emplace_back(std::piecewise_construct, std::forward_as_tuple(x, y), std::forward_as_tuple(newX, newY));
 							}
 						}
 					break;
 
 				// Bishops
 				case 6:
+				{
+					int directionX[4] = { 1, 1, -1, -1 };
+					int directionY[4] = { 1, -1, 1, -1 };
 					// Check all four directions
 					for (int i = 0; i < 4; i++)
 					{
-						int directionX[4] = { 1, 1, -1, -1 };
-						int directionY[4] = { 1, -1, 1, -1 };
 						int newX = x + directionX[i];
 						int newY = y + directionY[i];
 						while (InBounds(newX, newY) && gameBoard[newX][newY] * color <= 0)
 						{
-							coordinates initial(x, y);
-							coordinates final(newX, newY);
-							std::pair<coordinates, coordinates> move(initial, final);
-							possibleMoves.emplace_back(move);
+							possibleMoves.emplace_back(std::piecewise_construct, std::forward_as_tuple(x, y), std::forward_as_tuple(newX, newY));
 
 							if (gameBoard[newX][newY] * color < 0)
 								break;
@@ -842,22 +695,21 @@ std::vector<std::pair<coordinates, coordinates>> GameBoard::FindMoves(int color)
 						}
 					}
 					break;
+				}
 
 				// Queens
 				case 7:
+				{
+					int directionX[8] = { 0, 1, 0, -1, 1, 1, -1, -1 };
+					int directionY[8] = { 1, 0, -1, 0, 1, -1, 1, -1 };
 					// Check all eight directions
 					for (int i = 0; i < 8; i++)
 					{
-						int directionX[8] = { 0, 1, 0, -1, 1, 1, -1, -1 };
-						int directionY[8] = { 1, 0, -1, 0, 1, -1, 1, -1 };
 						int newX = x + directionX[i];
 						int newY = y + directionY[i];
 						while (InBounds(newX, newY) && gameBoard[newX][newY] * color <= 0)
 						{
-							coordinates initial(x, y);
-							coordinates final(newX, newY);
-							std::pair<coordinates, coordinates> move(initial, final);
-							possibleMoves.emplace_back(move);
+							possibleMoves.emplace_back(std::piecewise_construct, std::forward_as_tuple(x, y), std::forward_as_tuple(newX, newY));
 
 							if (gameBoard[newX][newY] * color < 0)
 								break;
@@ -867,6 +719,7 @@ std::vector<std::pair<coordinates, coordinates>> GameBoard::FindMoves(int color)
 						}
 					}
 					break;
+				}
 
 				// Kings
 				case 9:
@@ -874,64 +727,43 @@ std::vector<std::pair<coordinates, coordinates>> GameBoard::FindMoves(int color)
 					for (int i = 1; i < 4 && castleLong; i++)
 					{
 						// Black King
-						if (color == -1 && !blackInCheck)
-						{
-							if (gameBoard[x - i][y] != 0 || gameBoard[0][y] != -4)
+						if (color == -1)
+							if (gameBoard[x - i][y] != 0 || gameBoard[0][y] != -4 || blackInCheck)
 								castleLong = false;
-						}
 
 						// White King
-						if (color == 1 && !whiteInCheck)
-						{
-							if (gameBoard[x - i][y] != 0 || gameBoard[0][y] != 4)
+						if (color == 1)
+							if (gameBoard[x - i][y] != 0 || gameBoard[0][y] != 4 || whiteInCheck)
 								castleLong = false;
-						}
 					}
 
 					// Check castle short
 					for (int i = 1; i < 3 && castleShort; i++)
 					{
 						// Black King
-						if (color == -1 && !blackInCheck)
-						{
-							if (gameBoard[x + i][y] != 0 || gameBoard[7][y] != -4)
+						if (color == -1)
+							if (gameBoard[x + i][y] != 0 || gameBoard[7][y] != -4 || blackInCheck)
 								castleShort = false;
-						}
 
 						// White King
-						if (color == 1 && !whiteInCheck)
-						{
-							if (gameBoard[x + i][y] != 0 || gameBoard[7][y] != 4)
+						if (color == 1)
+							if (gameBoard[x + i][y] != 0 || gameBoard[7][y] != 4 || whiteInCheck)
 								castleShort = false;
-						}
 					}
 
 					// Add the castling moves if applicable
 					if (castleLong)
-					{
-						coordinates initial(x, y);
-						coordinates final(x - 2, y);
-						std::pair<coordinates, coordinates> move(initial, final);
-						possibleMoves.emplace_back(move);
-					}
+						possibleMoves.emplace_back(std::piecewise_construct,std::forward_as_tuple(x, y), std::forward_as_tuple(x - 2, y));
 
 					if (castleShort)
-					{
-						coordinates initial(x, y);
-						coordinates final(x + 2, y);
-						std::pair<coordinates, coordinates> move(initial, final);
-						possibleMoves.emplace_back(move);
-					}
+						possibleMoves.emplace_back(std::piecewise_construct, std::forward_as_tuple(x, y), std::forward_as_tuple(x + 2, y));
 				case 8:
 					// Check standard moves
 					for (int areaX = -1; areaX <= 1; areaX++)
 						for (int areaY = -1; areaY <= 1; areaY++)
 							if (InBounds(x + areaX, y + areaY) && gameBoard[x + areaX][y + areaY] * color <= 0 && (areaX != 0 || areaY != 0))
 							{
-								coordinates initial(x, y);
-								coordinates final(x + areaX, y + areaY);
-								std::pair<coordinates, coordinates> move(initial, final);
-								possibleMoves.emplace_back(move);
+								possibleMoves.emplace_back(std::piecewise_construct, std::forward_as_tuple(x, y), std::forward_as_tuple(x + areaX, y + areaY));
 							}
 					break;
 			}

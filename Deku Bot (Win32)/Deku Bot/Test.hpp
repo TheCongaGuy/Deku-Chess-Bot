@@ -1,5 +1,8 @@
 #pragma once
 
+#include <fstream>
+#include <string>
+
 #include "GameBoard.hpp"
 #include "DekuBot.hpp"
 #include "Sprite.h"
@@ -31,3 +34,7 @@ void AIGame();
 
 // Tests the AI with certain board configurations
 void AISituations();
+
+// Times Each Board Method and writes the results to a log
+// Additionally logs info on what resources are being used
+void timeTest();

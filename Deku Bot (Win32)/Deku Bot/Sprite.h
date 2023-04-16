@@ -1,6 +1,7 @@
 #pragma once
 
-#include <SFML/Graphics.hpp>
+#include <SFML/Graphics.hpp> // External Graphics Library
+
 #include "GameBoard.hpp"
 
 // Struct draws sprites to the screen
@@ -9,8 +10,10 @@ struct sprites : public sf::Drawable
 	// Explicit constructor takes a reference to a GameBoard
 	sprites(GameBoard& board)
 	{
+		// Set the reference
 		referenceBoard = &board;
 
+		// Fill the icon array with textures
 		for (int i = 0; i < 6; i++)
 			pieceIcons[i] = new sf::Texture;
 
@@ -34,23 +37,14 @@ struct sprites : public sf::Drawable
 			delete pieceIcons[i];
 	}
 
-	// Pointer to an existing game board
-	GameBoard* referenceBoard;
-
-	// Stores the icons for chess pieces in memory
-	sf::Texture* pieceIcons[6];
-
 	// Method to draw items to the window
 	virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const
 	{
-		// Texture object to load to
-		sf::Texture piece;
+		// Holds new position
+		int newX, newY;
 
 		// Calculate the width for a tile
 		int tileWidth = target.getSize().x / 8;
-
-		// Holds new position
-		int newX, newY;
 
 		// Draw background
 		for (int x = 0; x < 8; x++)
@@ -59,15 +53,15 @@ struct sprites : public sf::Drawable
 				// Tile to draw with
 				sf::RectangleShape backGround;
 
+				// Strech Tile to fill board
+				backGround.setSize(sf::Vector2f((float)tileWidth, (float)tileWidth));
+
 				// Calculate new position
 				newX = x * tileWidth;
 				newY = y * tileWidth;
 
 				// Shift tile to correct position
 				backGround.setPosition(sf::Vector2f((float)newX, (float)newY));
-
-				// Strech Tile to fill board
-				backGround.setSize(sf::Vector2f((float)tileWidth, (float)tileWidth));
 
 				// Color tile
 				if ((x + y) % 2 == 0)
@@ -168,4 +162,10 @@ struct sprites : public sf::Drawable
 				}
 			}
 	}
+
+	// Pointer to an existing game board
+	GameBoard* referenceBoard;
+
+	// Stores the icons for chess pieces in memory
+	sf::Texture* pieceIcons[6];
 };

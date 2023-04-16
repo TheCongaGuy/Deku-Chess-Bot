@@ -3,9 +3,9 @@
 #include <iostream>
 
 // Explicit Constructor
-DekuBot::DekuBot(GameBoard* board, const int color)
+DekuBot::DekuBot(GameBoard& board, const int color)
 {
-	currentGame = board;
+	currentGame = &board;
 	aiColor = color;
 	maxSearchTime = 0;
 }
@@ -17,12 +17,10 @@ void DekuBot::MakeMove(float maxTime)
 	auto moves = currentGame->FindMoves(aiColor);
 
 	// Calculate the maximum ammount of time the AI may search for
-	maxSearchTime = maxTime * 60000;
-
-	clock_t startTime = clock();
+	maxSearchTime = (int)(maxTime * 60000);
 
 	// Best Move
-	std::pair<coordinates, coordinates> bestMove = breadthFirstSearch(moves, startTime);
+	std::pair<coordinates, coordinates> bestMove = breadthFirstSearch(moves);
 
 	// Preform the best move
 	currentGame->MovePiece(bestMove.first, bestMove.second);
@@ -30,7 +28,7 @@ void DekuBot::MakeMove(float maxTime)
 
 // Search the tree Breadth First
 // Returns the best move after a given amount of time
-std::pair<coordinates, coordinates> DekuBot::breadthFirstSearch(std::vector<std::pair<coordinates, coordinates>>& moves, clock_t startTime)
+std::pair<coordinates, coordinates> DekuBot::breadthFirstSearch(std::vector<std::pair<coordinates, coordinates>>& moves)
 {
 	std::pair<coordinates, coordinates> bestMove;
 	bestMove.first = coordinates(-1, -1);
@@ -39,42 +37,67 @@ std::pair<coordinates, coordinates> DekuBot::breadthFirstSearch(std::vector<std:
 	int newScore = 0;
 	int depth = 1;
 
-	while (difftime(clock(), startTime) <= maxSearchTime && bestScore < 1000)
+	int size = moves.size();
+
+	auto maxSearchDuration = std::chrono::milliseconds(maxSearchTime);
+	auto endTime = std::chrono::high_resolution_clock::now() + maxSearchDuration;
+
+	while (std::chrono::high_resolution_clock::now() < endTime)
 	{
-		// Evaluate each possible move
-		for (auto& move : moves)
+		// Evaluate each possible move in parallel
+		#pragma omp parallel for
+		for (int index = 0; index < size; index++)
 		{
 			// Create a copy of the current game board
 			GameBoard copy = *currentGame;
 			// Preform the move on the copy
-			copy.MovePiece(move.first, move.second);
+			copy.MovePiece(moves[index].first, moves[index].second);
 			// Evaluate the result of that move
-			newScore = miniMaxMove(copy, INT32_MIN, INT32_MAX, depth, startTime);
+			newScore = miniMaxMove(copy, INT32_MIN, INT32_MAX, depth, endTime);
+
+			// Stop once out of time
+			if (std::chrono::high_resolution_clock::now() >= endTime)
+				break;
 
 			// Store the best move
+			#pragma omp critical
 			if (newScore > bestScore)
 			{
 				bestScore = newScore;
-				bestMove.first = move.first;
-				bestMove.second = move.second;
+				bestMove.first = moves[index].first;
+				bestMove.second = moves[index].second;
 			}
+
+			// Quick Return if move leads to checkmate
+			if (bestScore == 1000)
+			{
+				std::cout << "Guaranteed Checkmate" << std::endl;
+				break;
+			}
+		}
+
+		// Quick Return if all moves lead to loss
+		if (bestScore == -1000)
+		{
+			std::cout << "Checkmate - You Win" << std::endl;
+			return std::pair<coordinates, coordinates>(coordinates(0, 0), coordinates(0, 0));
 		}
 
 		depth++;
 	}
 
 	// For fun, calculate confidence of move
-	bestScore += 1000;
+	bestScore += 226;
 	bestScore *= 100;
-	float confidence = bestScore / 2000.f;
-	std::cout << "Confidence: " << confidence << "%" << std::endl;
+	float confidence = bestScore / 400.f;
+	std::cout << "Confidence: " << std::setprecision(4) << confidence << "%" << std::endl;
 
 	return bestMove;
 }
 
 // Recursively find the best possible outcome for a move
 // Returns an integer
-int DekuBot::miniMaxMove(GameBoard& nextGame, int alpha, int beta, int currentDepth, clock_t startTime)
+int DekuBot::miniMaxMove(GameBoard& nextGame, int alpha, int beta, int currentDepth, std::chrono::steady_clock::time_point endTime)
 {
 	// Calculate fitness of current board
 	int fitness = nextGame.RankBoard(aiColor);
@@ -88,8 +111,8 @@ int DekuBot::miniMaxMove(GameBoard& nextGame, int alpha, int beta, int currentDe
 		return fitness;
 
 	// Return invalid if search time was reached
-	if (difftime(clock(), startTime) >= maxSearchTime)
-		return 0;
+	if (std::chrono::high_resolution_clock::now() >= endTime)
+		return -1000;
 
 	// Find best move if it is AI's turn
 	if (aiColor == 1 && nextGame.whosTurn() || aiColor == -1 && !nextGame.whosTurn())
@@ -101,7 +124,7 @@ int DekuBot::miniMaxMove(GameBoard& nextGame, int alpha, int beta, int currentDe
 			GameBoard copy = nextGame;
 
 			copy.MovePiece(move.first, move.second);
-			int newValue = miniMaxMove(copy, alpha, beta, currentDepth - 1, startTime);
+			int newValue = miniMaxMove(copy, alpha, beta, currentDepth - 1, endTime);
 			
 			if (newValue > maxValue)
 				maxValue = newValue;
@@ -126,7 +149,7 @@ int DekuBot::miniMaxMove(GameBoard& nextGame, int alpha, int beta, int currentDe
 			GameBoard copy = nextGame;
 			copy.MovePiece(move.first, move.second);
 
-			int newValue = miniMaxMove(copy, alpha, beta, currentDepth - 1, startTime);
+			int newValue = miniMaxMove(copy, alpha, beta, currentDepth - 1, endTime);
 
 			if (newValue < minValue)
 				minValue = newValue;

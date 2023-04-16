@@ -1,73 +1,84 @@
-#include "Test.hpp"
-#include "DekuBot.hpp"
-#include "Sprite.h"
 #include <SFML/Graphics.hpp> // External Window Library
 #include <iostream>
+#include <omp.h>
+
+#include "DekuBot.hpp"
+#include "Test.hpp"
+#include "Helper.h"
+#include "Sprite.h"
 
 int main(int argc, char* argv[])
 {
-	int aiColor = 0;
+	/* ~~~~~~~~~~ DEV CONSTANTS ~~~~~~~~~~ */
+	// Number of Cores Reserved for Other Tasks | Cores not used by program
+	const int ReservedCores = omp_get_num_procs() / 4; // save 25% of user's cores
 
-	// Get Piece Information
-	std::cout << "What Color Is The AI? (w/b): ";
-	std::string input;
-	std::cin >> input;
-	if (input[0] == 'b')
-		aiColor = -1;
-	else
-		aiColor = 1;
+
+	/* ----- Global Variables ----- */
+	// Chess Board
+	GameBoard board;
+
+	// User's monitor resolution
+	sf::VideoMode userMonitor;
+
+	// Sprite Renderer
+	sprites drawable(board);
+
+	// Mouse Input Coordinates
+	coordinates onClick(-1, -1), onRelease(-1, -1);
+
+	// AI Color
+	const int aiColor = getUserColor();
+
+	// AI
+	DekuBot deku(board, aiColor);
+
+	// Get Max Search Time from user
+	const float maxTime = getSearchTime();
+
+	// Number of Available Cores
+	const int numCores = std::max(omp_get_num_procs() - ReservedCores, 1);	// leave 2 cores for other processes.
+																			// default to 1 if machine has less than
+																			// two cores.
+
 
 	// Display Choice
 	std::cout << "AI Color: ";
-	if (aiColor == -1)
+	switch (aiColor) {
+	case -1:
 		std::cout << "Black" << std::endl;
-	else
+		break;
+
+	case 1:
 		std::cout << "White" << std::endl;
-
-	// Get Max Search Time from user
-	std::cout << "How long may the AI search in minutes? (Negative numbers allow for no limit): ";
-	std::cin >> input;
-
-	float maxTime = std::stof(input);
-
-	if (maxTime < 0)
-	{
-		std::cout << "WARNING: You have selected no limit to the search time. This may have unknown concequences " << std::endl
-				  << "regarding the application, results, or total time spent computing. If you would like to cap" << std::endl
-				  << "the search, please enter a positive integer now." << std::endl;
-
-		std::cin >> input;
-		maxTime = std::stoi(input);
-
-		if (maxTime < 0)
-			maxTime = INT32_MAX / 60000;
+		break;
 	}
 
 	// Display Max Search Time
 	std::cout << "Deku Target Search Time: " << maxTime << " Minute(s)" << std::endl;
 
+	/* 
+		----- Information Collected, Move On To Setup ----- 
+	*/
+
 	std::cout << "Setting Up. . ." << std::endl;
+
+	// Set Up Thread Count
+	omp_set_num_threads(numCores);
 
 	// Run a test before program start
 	runAllTests();
-
 	std::cout << "Pre-Tests Passed, Instantiating AI.  .  ." << std::endl;
 
-	// Chess Board
-	GameBoard board;
-
-	// AI
-	DekuBot deku(&board, aiColor);
-
-	// Sprite Renderer
-	sprites drawable(board);
-
-	// Coordinates of the mouse
-	coordinates onClick(-1, -1);
-	coordinates onRelease(-1, -1);
-
 	// Get the resolution of the user's monitor
-	sf::VideoMode userMonitor = sf::VideoMode::getDesktopMode();
+	try {
+		userMonitor = sf::VideoMode::getDesktopMode();
+	}
+	catch (std::exception& e) {
+		std::cerr << "Failed to get desktop mode: " << e.what() << std::endl;
+		std::cerr << "Used to adjust size of chess board. Check Graphics Drivers / Display Settings" << std::endl;
+		return -10; // exit the program with an error code
+	}
 
 	// Find the smallest dimension
 	unsigned int smallestDimension = userMonitor.height;
@@ -86,39 +97,34 @@ int main(int argc, char* argv[])
 	// Render Window
 	sf::RenderWindow window(gameWindow, "The Great Deku Bot");
 
+	// Width and Height of a tile
+	const int tileSize = window.getSize().x / 8;
+
 	// Main Loop
 	while (window.isOpen())
 	{
-		// Event Manager
+		/* --- Loop Variables --- */
+		// Event Queue
 		sf::Event event;
+
+		// Event Manager
 		if (window.pollEvent(event))
-		{
-			// Close window when red x is pressed
-			if (event.type == sf::Event::Closed)
-				window.close();
-
-			// Log initial coordinates of mouse press
-			if (event.type == sf::Event::MouseButtonPressed)
+			switch (event.type)
 			{
-				// Tile Width
-				int tileWidth = window.getSize().x / 8;
+				case sf::Event::Closed:
+					window.close();
+					break;
+				case sf::Event::MouseButtonPressed:
+					onClick.first = sf::Mouse::getPosition(window).x / tileSize;
+					onClick.second = sf::Mouse::getPosition(window).y / tileSize;
+					break;
+				case sf::Event::MouseButtonReleased:
+					onRelease.first = sf::Mouse::getPosition(window).x / tileSize;
+					onRelease.second = sf::Mouse::getPosition(window).y / tileSize;
 
-				onClick.first = sf::Mouse::getPosition(window).x / tileWidth;
-				onClick.second = sf::Mouse::getPosition(window).y / tileWidth;
+					board.MovePiece(onClick, onRelease);
+					break;
 			}
-
-			// Register input on mouse release
-			if (event.type == sf::Event::MouseButtonReleased)
-			{
-				int tileWidth = window.getSize().x / 8;
-
-				onRelease.first = sf::Mouse::getPosition(window).x / tileWidth;
-				onRelease.second = sf::Mouse::getPosition(window).y / tileWidth;
-
-				board.MovePiece(onClick, onRelease);
-			}
-		}
-
 
 		// Window Refresh
 		window.clear();
